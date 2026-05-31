@@ -233,31 +233,31 @@ document.body.addEventListener('input', (e) => {
     const moduleMediaAssets = {
         module1: {
             video: 'https://youtu.be/69Mf7EIcwX0',
-            podcast: 'https://youtu.be/_RSS9OVq4oo',
+            podcast: 'https://youtu.be/nPAde8bWpQw',
             image: 'https://drive.google.com/file/d/1Ye9slmZwYnFCxD7LDdx3327zlEjJ66y5/view?usp=drive_link',
             pdf: 'https://drive.google.com/file/d/1ul41MQLCxaXl8orNZRPfDbtcM0Ere3lA/view?usp=drive_link'
         },
         module2: {
             video: 'https://youtu.be/eXHZXWFwthg',
-            podcast: 'https://drive.google.com/file/d/1noh9MpMcl6AqkqE5YpshKUIucoVxy5DM/view?usp=drive_link',
+            podcast: 'https://youtu.be/kUxgSs1OWEI',
             image: 'https://drive.google.com/file/d/1HisK_t_623lAmJDegx7Srqou08Jmjnou/view?usp=drive_link',
             pdf: 'https://drive.google.com/file/d/1RcAdLq8o2TPLKEVjHmFIHm94TKz2BOxn/view?usp=drive_link'
         },
         module3: {
             video: 'https://youtu.be/xPkPzw47FrM',
-            podcast: 'https://drive.google.com/file/d/1NkOSBTtyjVNFrRUvW4wA4cwu5BNOZaz4/view?usp=drive_link',
+            podcast: 'https://youtu.be/o9qxXjSKQQY',
             image: 'https://drive.google.com/file/d/1pHfPehN0Kt0X8m8aZWHEbyIFSzOk6o17/view?usp=drive_link',
             pdf: 'https://drive.google.com/file/d/1RflOdfARGlO8WuF3vOyF_C4QGhBPoNyw/view?usp=drive_link'
         },
         module4: {
             video: 'https://youtu.be/FqWq_ld2XCw',
-            podcast: 'https://drive.google.com/file/d/1cnoEBd5OufF0amJc1_eE-BQH91zoCRqj/view?usp=drive_link',
+            podcast: 'https://youtu.be/bEW-QerRPL4',
             image: 'https://drive.google.com/file/d/14ozjs37wbfJsnFaJkmEU8zzLaLe10UN-/view?usp=drive_link',
             pdf: 'https://drive.google.com/file/d/1mmsd1a_AT6paPuLssv8a4OiTuMvg1S7z/view?usp=drive_link'
         },
         module5: {
             video: 'https://youtu.be/0EtdlXCklZ8',
-            podcast: 'https://drive.google.com/file/d/1v9B1fgOPkWK8uWLZIM_PndV6oH7RyLiV/view?usp=drive_link',
+            podcast: 'https://youtu.be/acQbeJ4XwTI',
             image: 'https://drive.google.com/file/d/1_G8ckymyPV_G2DL_qu5dkUnSdztvCWHw/view?usp=drive_link',
             pdf: 'https://drive.google.com/file/d/1xLPNu15F74dK6bXXCq4jmsNgXee-ZYVR/view?usp=drive_link'
         }
