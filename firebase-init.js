@@ -13,9 +13,8 @@
     window.__fbAuth = firebase.auth();
     window.__fbDB = firebase.firestore();
     
-    // TRAVA DE SEGURANÇA ELITE: Modificado de LOCAL para SESSION.
-    // Garante que o login caia no momento em que a aba/navegador for fechado.
-    window.__fbAuth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+    // Mantem a senha salva pelo navegador, mas exige login ao abrir/recarregar a plataforma.
+    window.__fbAuth.setPersistence(firebase.auth.Auth.Persistence.NONE);
   };
 
   // --- 2. VALIDAÇÃO DE CPF OPERACIONAL ---
@@ -104,21 +103,31 @@
 
   // --- 6. GATILHO DA BIOMETRIA NATIVA (WEBAUTHN API) ---
   window.FirebaseCourse.loginWithBiometrics = async function() {
-      if (!window.PublicKeyCredential) {
-          alert("Aviso: Biometria ou FaceID não são suportados neste dispositivo ou navegador.");
+      const emailInput = document.getElementById('email-input');
+      const passwordInput = document.getElementById('password-input');
+
+      if (!navigator.credentials || !window.PasswordCredential) {
+          alert("Use o preenchimento automático de senha do navegador. No iPhone/Mac, ele pode liberar com Face ID ou Touch ID quando a senha estiver salva.");
           return;
       }
       
       try {
-          // Aciona o hardware de proteção nativo (Apple Secure Enclave ou Android Keystore)
-          alert("🤖 Aguardando leitura do sensor biométrico/FaceID do seu aparelho...");
-          
-          // Nota de Engenharia: O WebAuthn necessita de um backend para validar os desafios (challenges).
-          // Com este gatilho ativo, a interface já está pronta para integrar com rotinas de criptografia assimétrica.
-          console.log("Hardware biométrico respondendo em QAP.");
+          const credential = await navigator.credentials.get({
+              password: true,
+              mediation: 'required'
+          });
+
+          if (!credential || !credential.id || !credential.password) {
+              alert("Nenhuma senha salva foi encontrada para este site. Faça login uma vez e permita que o navegador salve a senha.");
+              return;
+          }
+
+          if (emailInput) emailInput.value = credential.id;
+          if (passwordInput) passwordInput.value = credential.password;
+          await window.FirebaseCourse.signInWithEmail(credential.id, credential.password);
       } catch (err) {
           console.error("Erro na leitura biométrica:", err);
-          alert("Falha na autenticação biométrica: " + err.message);
+          alert("Não consegui acessar a senha salva. Faça login normalmente e permita que o navegador salve a senha.");
       }
   };
 

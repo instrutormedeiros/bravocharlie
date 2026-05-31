@@ -677,18 +677,8 @@ setTimeout(() => {
             if(loginModal) loginModal.classList.remove('show');
             if(loginOverlay) loginOverlay.classList.remove('show');
 
-            // 2. Verifica se o usuário JÁ estava logado antes (Sessão salva)
-            const isLogged = localStorage.getItem('my_session_id');
-
-            if (isLogged) {
-                // Se já tem sessão, faz a verificação silenciosa no fundo
-                // O usuário vê a Capa, mas o sistema já vai logando por trás
-                FirebaseCourse.checkAuth((user, userData) => {
-                    onLoginSuccess(user, userData);
-                });
-            } 
-            // SE NÃO TIVER SESSÃO, NÃO FAZ NADA! 
-            // O modal só abrirá quando o usuário clicar em "ACESSAR PLATAFORMA" na capa.
+            localStorage.removeItem('my_session_id');
+            // O aluno sempre passa pela tela de login. A senha pode ficar salva no navegador/Face ID.
         }
         
         setupHeaderScroll();
@@ -1138,6 +1128,7 @@ window.manageUserAccess = async function(uid) {
             
             authTitle.textContent = "Criar Nova Conta";
             authMsg.textContent = "Cadastre-se para o Período de Experiência.";
+            passwordInput?.setAttribute('autocomplete', 'new-password');
             feedback.textContent = "";
         });
 
@@ -1154,6 +1145,7 @@ window.manageUserAccess = async function(uid) {
             
             authTitle.textContent = "Acesso ao Sistema";
             authMsg.textContent = "Acesso Restrito";
+            passwordInput?.setAttribute('autocomplete', 'current-password');
             feedback.textContent = "";
         });
 
@@ -1171,6 +1163,7 @@ window.manageUserAccess = async function(uid) {
             try {
                 localStorage.removeItem('my_session_id'); 
                 await FirebaseCourse.signInWithEmail(email, password);
+                await storeLoginCredential(email, password);
                 feedback.textContent = "Verificando...";
             } catch (error) {
                 feedback.className = "text-center text-sm mt-4 text-red-400 font-semibold";
@@ -1197,12 +1190,27 @@ window.manageUserAccess = async function(uid) {
             feedback.className = "text-center text-sm mt-4 text-blue-400 font-semibold";
             try {
                 await FirebaseCourse.signUpWithEmail(name, email, password, cpf, company, phone, courseType);
+                await storeLoginCredential(email, password);
                 feedback.textContent = "Sucesso! Iniciando...";
             } catch (error) {
                 feedback.className = "text-center text-sm mt-4 text-red-400 font-semibold";
                 feedback.textContent = error.message || "Erro ao criar conta.";
             }
         });
+
+        async function storeLoginCredential(email, password) {
+            if (!navigator.credentials || !window.PasswordCredential || !email || !password) return;
+            try {
+                const credential = new PasswordCredential({
+                    id: email,
+                    password,
+                    name: email
+                });
+                await navigator.credentials.store(credential);
+            } catch (error) {
+                console.warn('Senha salva pelo navegador indisponivel:', error);
+            }
+        }
     }
 
     function handleInitialLoad() {

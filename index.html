@@ -29,7 +29,7 @@
       }
     </script>
 
-    <link rel="stylesheet" href="style.css?v=65">
+    <link rel="stylesheet" href="style.css?v=70">
     
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -1152,7 +1152,7 @@
                     <label class="text-sm font-bold text-orange-500 ml-1 uppercase tracking-wider">Nome Completo</label>
                     <div class="relative mt-1">
                         <i class="fas fa-user absolute left-4 top-3.5 text-gray-400 text-lg"></i>
-                        <input type="text" id="name-input" class="w-full pl-12 p-3 bg-gray-800/50 border border-gray-700 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white placeholder-gray-500 transition-all outline-none text-base" placeholder="Seu nome completo">
+                        <input type="text" id="name-input" name="name" autocomplete="name" class="w-full pl-12 p-3 bg-gray-800/50 border border-gray-700 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white placeholder-gray-500 transition-all outline-none text-base" placeholder="Seu nome completo">
                     </div>
                 </div>
                 <div id="cpf-field-container" class="hidden transition-all duration-300">
@@ -1166,7 +1166,7 @@
                     <label class="text-sm font-bold text-orange-500 ml-1 uppercase tracking-wider">Telefone / WhatsApp</label>
                     <div class="relative mt-1">
                         <i class="fas fa-phone absolute left-4 top-3.5 text-gray-400 text-lg"></i>
-                        <input type="tel" id="phone-input" class="w-full pl-12 p-3 bg-gray-800/50 border border-gray-700 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white placeholder-gray-500 transition-all outline-none text-base" placeholder="(DD) 90000-0000">
+                        <input type="tel" id="phone-input" name="tel" autocomplete="tel" class="w-full pl-12 p-3 bg-gray-800/50 border border-gray-700 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white placeholder-gray-500 transition-all outline-none text-base" placeholder="(DD) 90000-0000">
                     </div>
                 </div>
                 <div id="company-field-container" class="hidden transition-all duration-300">
@@ -1193,14 +1193,14 @@
                     <label class="text-sm font-bold text-orange-500 ml-1 uppercase tracking-wider">Email de Acesso</label>
                     <div class="relative mt-1">
                         <i class="fas fa-envelope absolute left-4 top-3.5 text-gray-400 text-lg"></i>
-                        <input type="email" id="email-input" class="w-full pl-12 p-3 bg-gray-800/50 border border-gray-700 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white placeholder-gray-500 transition-all outline-none text-base" placeholder="seu@email.com">
+                        <input type="email" id="email-input" name="username" autocomplete="username email" class="w-full pl-12 p-3 bg-gray-800/50 border border-gray-700 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white placeholder-gray-500 transition-all outline-none text-base" placeholder="seu@email.com">
                     </div>
                 </div>
                 <div>
                     <label class="text-sm font-bold text-orange-500 ml-1 uppercase tracking-wider">Senha</label>
                     <div class="relative mt-1">
                         <i class="fas fa-lock absolute left-4 top-3.5 text-gray-400 text-lg"></i>
-                        <input type="password" id="password-input" class="w-full pl-12 p-3 bg-gray-800/50 border border-gray-700 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white placeholder-gray-500 transition-all outline-none text-base" placeholder="••••••••">
+                        <input type="password" id="password-input" name="password" autocomplete="current-password" class="w-full pl-12 p-3 bg-gray-800/50 border border-gray-700 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white placeholder-gray-500 transition-all outline-none text-base" placeholder="••••••••">
                     </div>
                 </div>
             </div>
@@ -1213,7 +1213,7 @@
                 </button>
 <button id="btn-biometric-login" class="w-full mt-4 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-xl flex items-center justify-center border border-gray-600 transition-all group">
     <i class="fas fa-fingerprint mr-2 text-orange-500 group-hover:scale-110"></i>
-    Acessar com Biometria
+    Entrar com senha salva / Face ID
 </button>
                 
                 <div class="flex flex-col space-y-3 pt-4 items-center border-t border-gray-800 mt-4">
