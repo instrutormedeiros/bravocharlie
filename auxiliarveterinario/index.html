@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auxiliar Veterinário | Portal Premium</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        
+        /* Tipografia Premium */
+        .prose h3 { 
+            color: #0f172a; 
+            font-weight: 700; 
+            margin-top: 2.5rem; 
+            margin-bottom: 1rem; 
+            font-size: 1.5rem; 
+            letter-spacing: -0.02em;
+        }
+        .prose p { 
+            margin-bottom: 1.5rem; 
+            line-height: 1.8; 
+            color: #475569; 
+            font-size: 1.05rem; 
+        }
+        .prose ul { 
+            list-style: none; 
+            padding: 0; 
+            margin-bottom: 2rem; 
+        }
+        .prose li { 
+            margin-bottom: 0.75rem; 
+            padding-left: 1.5rem; 
+            position: relative; 
+            color: #334155;
+        }
+        .prose li::before { 
+            content: "\f00c"; 
+            font-family: "Font Awesome 6 Free"; 
+            font-weight: 900; 
+            position: absolute; 
+            left: 0; 
+            color: #0ea5e9; 
+            font-size: 0.8em; 
+            top: 4px;
+        }
+        
+        /* Efeitos Visuais */
+        .fade-in { animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Botões Premium */
+        .btn-premium {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: white;
+            padding: 1rem 3rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 20px -5px rgba(15, 23, 42, 0.3);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            letter-spacing: 0.02em;
+        }
+        .btn-premium:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.4);
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        }
+
+        .btn-ghost {
+            background: white;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            padding: 1rem 3rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+        .btn-ghost:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            color: #0f172a;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-accent {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+            cursor: pointer;
+        }
+        .btn-accent:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(14, 165, 233, 0.4);
+            filter: brightness(110%);
+        }
+
+        /* Sidebar & Cards */
+        .sidebar-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.05);
+            border: 1px solid #f1f5f9;
+            overflow: hidden;
+        }
+
+        .nav-item {
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            color: #64748b;
+        }
+        .nav-item:hover {
+            background-color: #f0f9ff;
+            color: #0ea5e9;
+        }
+        .nav-item.active {
+            background-color: #e0f2fe;
+            color: #0284c7;
+            font-weight: 600;
+        }
+
+        /* Custom Scrollbar */
+        .custom-scroll::-webkit-scrollbar { width: 5px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    </style>
+</head>
+<body class="flex flex-col min-h-screen bg-slate-50/50">
+
+    <!-- Navbar Minimalista -->
+    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex justify-between h-24 items-center">
+                <!-- Logo -->
+                <div class="flex items-center gap-4 cursor-pointer group" onclick="app.navigate('home')">
+                    <div class="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl group-hover:scale-105 transition duration-500 ease-out">
+                        <i class="fa-solid fa-stethoscope text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900 leading-none tracking-tight">AUXILIAR VETERINÁRIO</h1>
+                        <p class="text-[11px] font-bold text-sky-600 uppercase tracking-[0.2em] mt-1">Formação Técnica</p>
+                    </div>
+                </div>
+
+                <!-- Menu Central -->
+                <div class="hidden md:flex items-center gap-2 bg-slate-50 p-1.5 rounded-full border border-slate-200/60 shadow-sm">
+                    <button onclick="app.navigate('home')" id="nav-home" class="px-8 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 text-slate-600 hover:text-slate-900">Início</button>
+                    <button onclick="app.navigate('course')" id="nav-course" class="px-8 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 text-slate-600 hover:text-slate-900">Sala de Aula</button>
+                </div>
+
+                <!-- Progresso -->
+                <div id="navProgressContainer" class="hidden items-center gap-4">
+                    <div class="text-right">
+                        <p class="text-[10px] text-slate-400 uppercase font-extrabold tracking-wider mb-0.5">Progresso</p>
+                        <p id="progressText" class="text-base font-bold text-slate-900 leading-none font-mono">0%</p>
+                    </div>
+                    <div class="w-10 h-10 relative flex items-center justify-center">
+                        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                            <path class="text-slate-100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="4" />
+                            <path id="progressCircle" class="text-sky-500 transition-all duration-1000 ease-out drop-shadow-sm" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow">
+        
+        <!-- VIEW: HOME (Premium Landing Redesigned) -->
+        <div id="view-home" class="fade-in">
+            <div class="relative min-h-[85vh] flex flex-col justify-center items-center bg-white overflow-hidden text-center px-6 pt-20 pb-32">
+                <!-- Background decorative elements -->
+                <div class="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
+                <div class="absolute -top-40 -right-40 w-[600px] h-[600px] bg-sky-50 rounded-full blur-[100px] opacity-60 pointer-events-none"></div>
+                <div class="absolute top-40 -left-40 w-[500px] h-[500px] bg-indigo-50 rounded-full blur-[100px] opacity-40 pointer-events-none"></div>
+
+                <div class="max-w-4xl mx-auto relative z-10">
+                    <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white border border-slate-200 shadow-sm text-slate-600 text-xs font-bold uppercase tracking-wider mb-10 hover:border-sky-200 hover:shadow-md transition-all cursor-default">
+                        <span class="flex h-2 w-2 relative">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
+                        </span>
+                        Curso de Capacitação Profissional
+                    </div>
+                    
+                    <h1 class="text-6xl md:text-7xl lg:text-8xl font-extrabold text-slate-900 mb-8 tracking-tight leading-[1.1]">
+                        Excelência no <br>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-600 to-indigo-600">Cuidado Animal.</span>
+                    </h1>
+                    
+                    <p class="text-xl md:text-2xl text-slate-500 mb-12 leading-relaxed max-w-2xl mx-auto font-light">
+                        A formação definitiva em contenção, primeiros socorros e instrumentação clínica. Torne-se essencial para a medicina veterinária.
+                    </p>
+                    
+                    <div class="flex flex-col sm:flex-row gap-6 justify-center items-center">
+                        <button onclick="app.navigate('course')" class="btn-premium group w-full sm:w-auto">
+                            Iniciar Jornada
+                            <i class="fa-solid fa-arrow-right ml-3 group-hover:translate-x-1 transition-transform text-sky-200"></i>
+                        </button>
+                        <button onclick="document.getElementById('about-section').scrollIntoView({behavior: 'smooth'})" class="btn-ghost w-full sm:w-auto">
+                            Conhecer Conteúdo
+                        </button>
+                    </div>
+                    
+                    <div class="mt-20 pt-10 border-t border-slate-100 flex flex-wrap justify-center gap-8 md:gap-16 text-slate-400 font-medium">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-sky-50 flex items-center justify-center text-sky-600 text-lg"><i class="fa-solid fa-certificate"></i></div>
+                            <span class="text-slate-600">Certificado Oficial</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-sky-50 flex items-center justify-center text-sky-600 text-lg"><i class="fa-solid fa-infinity"></i></div>
+                            <span class="text-slate-600">Acesso Vitalício</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-sky-50 flex items-center justify-center text-sky-600 text-lg"><i class="fa-solid fa-laptop-medical"></i></div>
+                            <span class="text-slate-600">100% Online</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumo do Conteúdo (Design Grid) -->
+            <section id="about-section" class="py-32 bg-slate-50 border-t border-slate-200">
+                <div class="max-w-7xl mx-auto px-6">
+                    <div class="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
+                        <div class="max-w-xl">
+                            <h2 class="text-4xl font-bold text-slate-900 mb-4">Grade Curricular</h2>
+                            <p class="text-slate-500 text-lg">Um programa desenhado meticulosamente para cobrir as demandas reais de clínicas e hospitais.</p>
+                        </div>
+                        <div class="h-px bg-slate-200 flex-grow md:ml-12 mb-4"></div>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <!-- Card 1 -->
+                        <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 group">
+                            <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6 text-2xl group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
+                                <i class="fa-solid fa-hand-holding-medical"></i>
+                            </div>
+                            <h3 class="font-bold text-xl text-slate-900 mb-3">Contenção</h3>
+                            <p class="text-slate-500 leading-relaxed">Domine técnicas seguras de manejo físico para cães e gatos, priorizando a segurança e o bem-estar.</p>
+                        </div>
+                        <!-- Card 2 -->
+                        <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 group">
+                            <div class="w-14 h-14 bg-sky-50 text-sky-600 rounded-2xl flex items-center justify-center mb-6 text-2xl group-hover:bg-sky-600 group-hover:text-white transition-colors duration-300">
+                                <i class="fa-solid fa-syringe"></i>
+                            </div>
+                            <h3 class="font-bold text-xl text-slate-900 mb-3">Clínica Médica</h3>
+                            <p class="text-slate-500 leading-relaxed">Aprenda sobre protocolos vacinais, principais zoonoses e identificação de patologias infecciosas.</p>
+                        </div>
+                        <!-- Card 3 -->
+                        <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 group">
+                            <div class="w-14 h-14 bg-teal-50 text-teal-600 rounded-2xl flex items-center justify-center mb-6 text-2xl group-hover:bg-teal-600 group-hover:text-white transition-colors duration-300">
+                                <i class="fa-solid fa-pump-medical"></i>
+                            </div>
+                            <h3 class="font-bold text-xl text-slate-900 mb-3">Emergências</h3>
+                            <p class="text-slate-500 leading-relaxed">Atuação rápida em primeiros socorros, paradas cardiorrespiratórias e estabilização de traumas.</p>
+                        </div>
+                        <!-- Card 4 -->
+                        <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 group">
+                            <div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-6 text-2xl group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300">
+                                <i class="fa-solid fa-baby"></i>
+                            </div>
+                            <h3 class="font-bold text-xl text-slate-900 mb-3">Neonatologia</h3>
+                            <p class="text-slate-500 leading-relaxed">Cuidados intensivos com recém-nascidos, controle de hipotermia e suporte à amamentação.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- VIEW: COURSE (Area do Aluno) -->
+        <div id="view-course" class="hidden fade-in min-h-screen bg-slate-50">
+            <div class="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                <!-- Sidebar (Menu) -->
+                <aside class="lg:col-span-3 space-y-6">
+                    <!-- Card Material -->
+                    <div class="sidebar-card p-8 text-center border-t-4 border-sky-500">
+                        <div class="w-20 h-20 mx-auto bg-slate-50 rounded-full flex items-center justify-center mb-5 text-slate-700 shadow-inner">
+                            <i class="fa-solid fa-book-open text-3xl"></i>
+                        </div>
+                        <h2 class="text-lg font-bold text-slate-900 mb-1">Apostila Digital</h2>
+                        <p class="text-xs text-slate-500 mb-6 font-medium uppercase tracking-wide">Material Completo</p>
+                        <a href="veterinario.pdf" download class="btn-ghost w-full text-sm py-3 flex items-center justify-center gap-3 hover:bg-sky-50 hover:border-sky-200 hover:text-sky-700">
+                            Download PDF <i class="fa-solid fa-download"></i>
+                        </a>
+                    </div>
+
+                    <!-- Menu Módulos -->
+                    <div class="sidebar-card">
+                        <div class="p-5 border-b border-slate-100 bg-white">
+                            <h3 class="font-bold text-slate-900 text-xs uppercase tracking-[0.15em]">Módulos</h3>
+                        </div>
+                        <div class="max-h-[450px] overflow-y-auto custom-scroll p-3 bg-slate-50/50">
+                            <ul class="space-y-1" id="moduleList">
+                                <!-- JS Injects here -->
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Avaliações -->
+                    <div class="sidebar-card p-5 space-y-4">
+                        <h3 class="font-bold text-slate-400 text-[10px] uppercase tracking-widest px-2">Avaliações</h3>
+                        <button onclick="app.startPractice()" class="w-full flex items-center justify-between p-4 rounded-xl bg-white border border-slate-100 hover:border-sky-300 hover:shadow-md transition-all group text-left">
+                            <span class="text-sm font-semibold text-slate-600 group-hover:text-sky-700">Simulado Prático</span>
+                            <div class="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-sky-100 group-hover:text-sky-600 transition-colors">
+                                <i class="fa-solid fa-dumbbell text-xs"></i>
+                            </div>
+                        </button>
+                        <button onclick="app.checkExamEligibility()" class="w-full flex items-center justify-between p-4 rounded-xl bg-slate-900 text-white shadow-xl hover:bg-slate-800 hover:shadow-2xl hover:-translate-y-1 transition-all text-left group">
+                            <span class="text-sm font-bold tracking-wide">Prova Final</span>
+                            <i class="fa-solid fa-lock text-slate-500 group-hover:text-white transition" id="examLockIcon"></i>
+                        </button>
+                    </div>
+                </aside>
+
+                <!-- Content Area -->
+                <section class="lg:col-span-9">
+                    
+                    <!-- Content Viewer -->
+                    <div id="contentViewer" class="sidebar-card p-10 md:p-14 min-h-[600px] relative">
+                        <!-- Decorative top bar -->
+                        <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600"></div>
+                        
+                        <div id="moduleHeader" class="mb-12 pb-8 border-b border-slate-100">
+                            <div class="flex items-center gap-3 mb-4">
+                                <span class="bg-sky-50 text-sky-700 text-[10px] font-extrabold px-3 py-1.5 rounded-full uppercase tracking-wider border border-sky-100">Módulo Atual</span>
+                            </div>
+                            <h2 id="moduleTitle" class="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">Carregando...</h2>
+                        </div>
+
+                        <div id="moduleContent" class="prose max-w-none text-slate-600">
+                            <!-- Dynamic Content -->
+                            <div class="flex flex-col items-center justify-center py-24 text-slate-300">
+                                <i class="fa-solid fa-circle-notch fa-spin text-5xl mb-6"></i>
+                                <p class="text-sm font-medium uppercase tracking-widest text-slate-400">Sincronizando conteúdo...</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Navigation -->
+                        <div class="flex justify-between mt-20 pt-10 border-t border-slate-100" id="navButtons">
+                            <button onclick="app.prevModule()" id="btnPrev" class="btn-ghost px-8 py-4 text-sm flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed hover:translate-x-0">
+                                <i class="fa-solid fa-arrow-left"></i> Anterior
+                            </button>
+                            <button onclick="app.nextModule()" id="btnNext" class="btn-accent px-10 py-4 text-sm flex items-center gap-3 shadow-lg shadow-sky-200">
+                                Próximo <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Quiz Interface -->
+                    <div id="quizInterface" class="sidebar-card hidden">
+                        <div class="p-10 bg-slate-900 text-white rounded-t-xl flex justify-between items-center relative overflow-hidden">
+                            <!-- Decor -->
+                            <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                            
+                            <div class="relative z-10">
+                                <p class="text-sky-400 text-xs font-extrabold uppercase tracking-widest mb-2">Modo Avaliação</p>
+                                <h2 id="quizTitle" class="text-3xl font-bold tracking-tight">Prova Oficial</h2>
+                            </div>
+                            <button onclick="app.closeQuiz()" class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition backdrop-blur-sm relative z-10">
+                                <i class="fa-solid fa-times text-lg"></i>
+                            </button>
+                        </div>
+                        
+                        <div id="quizContainer" class="p-10 space-y-10 bg-slate-50/50">
+                            <!-- Questions -->
+                        </div>
+
+                        <div class="p-10 border-t border-slate-100 bg-white text-right rounded-b-xl">
+                            <button onclick="app.submitQuiz()" class="btn-premium px-12 py-4 text-lg shadow-xl shadow-slate-200">
+                                Finalizar Avaliação <i class="fa-solid fa-check ml-3"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Certificate Panel -->
+                    <div id="certificatePanel" class="sidebar-card hidden text-center p-16 max-w-3xl mx-auto mt-12 border-t-8 border-green-500 relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] pointer-events-none"></div>
+                        
+                        <div class="relative z-10">
+                            <div class="w-28 h-28 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
+                                <i class="fa-solid fa-trophy text-6xl text-green-500 drop-shadow-sm"></i>
+                            </div>
+                            <h2 class="text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">Parabéns!</h2>
+                            <p class="text-slate-500 mb-10 text-lg max-w-md mx-auto">Você completou a jornada com excelência e foi aprovado na avaliação final.</p>
+                            
+                            <div class="bg-white p-10 rounded-3xl border border-slate-100 text-left shadow-xl shadow-slate-100/50 max-w-xl mx-auto">
+                                <form id="certForm" onsubmit="app.requestCertificate(event)" class="space-y-6">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2 tracking-wider">Nome Completo (Para o Certificado)</label>
+                                        <input type="text" id="certName" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 font-medium focus:ring-2 focus:ring-sky-500 focus:border-transparent outline-none transition-all placeholder-slate-300" placeholder="Ex: João da Silva">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-6">
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-400 uppercase mb-2 tracking-wider">CPF</label>
+                                            <input type="text" id="certCPF" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 font-medium focus:ring-2 focus:ring-sky-500 focus:border-transparent outline-none transition-all placeholder-slate-300" placeholder="000.000.000-00">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-400 uppercase mb-2 tracking-wider">RG</label>
+                                            <input type="text" id="certRG" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 font-medium focus:ring-2 focus:ring-sky-500 focus:border-transparent outline-none transition-all placeholder-slate-300" placeholder="0.000.000">
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="w-full btn-accent mt-6 py-4 text-lg justify-center shadow-lg shadow-sky-200 hover:shadow-sky-300">
+                                        <i class="fa-brands fa-whatsapp text-2xl mr-3"></i> Solicitar Certificado
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                </section>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal Alert -->
+    <div id="alertModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md hidden z-[100] flex items-center justify-center p-6">
+        <div class="bg-white rounded-3xl shadow-2xl p-10 max-w-sm w-full text-center transform scale-100 transition-all border border-slate-100">
+            <div id="alertIcon" class="text-6xl mb-6"></div>
+            <h3 id="alertTitle" class="text-2xl font-bold mb-3 text-slate-900 tracking-tight"></h3>
+            <p id="alertMsg" class="text-slate-500 mb-10 leading-relaxed"></p>
+            <button onclick="document.getElementById('alertModal').classList.add('hidden')" class="btn-premium w-full text-sm uppercase tracking-widest py-4">Entendido</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // --- DADOS DO CURSO (Conteúdo Técnico - Igual ao anterior) ---
+        const courseContent = [
+            {
+                title: "A Profissão e Biossegurança",
+                content: `
+                    <h3>O Auxiliar de Veterinário</h3>
+                    <p>O auxiliar veterinário é o braço direito do médico veterinário. Suas funções incluem desde a recepção do paciente, contenção durante exames, preparo de materiais, até cuidados com internação e alimentação.</p>
+                    <p><strong>Limites da Profissão:</strong> O auxiliar <strong>NÃO PODE</strong> realizar cirurgias, prescrever medicamentos, diagnosticar doenças ou realizar eutanásia. Estes são atos privativos do médico veterinário.</p>
+                    <h3>Biossegurança</h3>
+                    <p>Envolve medidas para prevenir riscos à saúde humana, animal e ambiental. O uso de EPIs (Equipamentos de Proteção Individual) é obrigatório:</p>
+                    <ul>
+                        <li><strong>Luvas:</strong> Sempre que manipular animais, fluidos ou materiais contaminados.</li>
+                        <li><strong>Jaleco:</strong> Proteção corporal.</li>
+                        <li><strong>Máscara e Óculos:</strong> Em procedimentos que gerem aerossóis ou risco de respingos (ex: limpeza dentária, cirurgias).</li>
+                    </ul>
+                    <p><strong>Acidentes com Perfurocortantes:</strong> Agulhas e bisturis devem ser descartados em caixas rígidas (Descarpack), nunca no lixo comum.</p>
+                `
+            },
+            {
+                title: "Contenção de Animais: Cães",
+                content: `
+                    <h3>Abordagem Segura</h3>
+                    <p>Antes de tocar no animal, observe sua linguagem corporal (posição das orelhas, cauda, pelos). Aproxime-se com calma, evitando contato visual direto e brusco.</p>
+                    <h3>Técnicas de Contenção</h3>
+                    <ul>
+                        <li><strong>Contenção Física:</strong> Uso da força física moderada e técnicas para restringir movimentos.</li>
+                        <li><strong>Focinheira:</strong> Equipamento essencial para cães agressivos ou assustados. Impede mordidas. Tipos: cesta, nylon ou improvisada (gaze).</li>
+                        <li><strong>Decúbito Lateral:</strong> Deitar o cão de lado, segurando os membros que estão em contato com a mesa.</li>
+                        <li><strong>Posição Sentada:</strong> Um braço envolve o pescoço e o outro abraça o corpo.</li>
+                    </ul>
+                    <p>Nunca confie totalmente em um animal com dor ou medo. A segurança da equipe vem em primeiro lugar.</p>
+                `
+            },
+            {
+                title: "Contenção de Animais: Gatos",
+                content: `
+                    <h3>O Desafio Felino</h3>
+                    <p>Gatos são ágeis e possuem "armas" (dentes e 4 patas com unhas). O estresse pode ser fatal para gatos cardiopatas.</p>
+                    <h3>Técnicas e Equipamentos</h3>
+                    <ul>
+                        <li><strong>Toalha/Manta (Técnica do Burrito):</strong> Envolver o gato deixando apenas a cabeça ou o membro a ser examinado de fora. É a técnica mais segura e menos estressante.</li>
+                        <li><strong>Gatil/Caixa de Transporte:</strong> Para retirar gatos agressivos, desmonte a caixa se possível, evitando puxá-los à força.</li>
+                        <li><strong>Mordaça/Focinheira para Gatos:</strong> Cobre os olhos e a boca, acalmando o animal ao retirar o estímulo visual.</li>
+                        <li><strong>Cambão:</strong> Evitar ao máximo em gatos, pois causa pânico e risco de enforcamento. Usar apenas em risco iminente de ataque grave.</li>
+                    </ul>
+                `
+            },
+            {
+                title: "Nutrição de Cães e Gatos",
+                content: `
+                    <h3>Fases da Vida</h3>
+                    <ul>
+                        <li><strong>Filhotes:</strong> Necessitam de mais proteína e energia para crescimento. Ração específica "Júnior" ou "Filhote".</li>
+                        <li><strong>Adultos:</strong> Manutenção do peso e saúde.</li>
+                        <li><strong>Idosos (Sênior):</strong> Menos calorias (metabolismo lento), proteínas de alta qualidade e condroprotetores (articulações).</li>
+                    </ul>
+                    <h3>Tipos de Alimento</h3>
+                    <p><strong>Seca (Ração):</strong> Mais prática, ajuda na limpeza dental. <strong>Úmida (Sachê/Lata):</strong> Mais palatável, ajuda na hidratação (essencial para gatos), mas estraga rápido após aberta.</p>
+                    <h3>Alimentos Proibidos</h3>
+                    <p>Chocolate (teobromina), cebola/alho (anemia), uvas (falência renal), ossos de galinha cozidos (lascam e perfuram intestino).</p>
+                `
+            },
+            {
+                title: "Estética Animal (Banho e Tosa)",
+                content: `
+                    <h3>Procedimentos Básicos</h3>
+                    <p>O banho e tosa não é apenas estética, é saúde. Permite identificar problemas de pele, parasitas e nódulos.</p>
+                    <ul>
+                        <li><strong>Proteção Auricular:</strong> Sempre colocar algodão nos ouvidos (impermeável se possível) para evitar otite por entrada de água.</li>
+                        <li><strong>Corte de Unhas:</strong> Cuidado com o "sabugo" (vaso sanguíneo). Em unhas claras é visível (parte rosa); em escuras, corte apenas a ponta em 45º.</li>
+                        <li><strong>Glândulas Adanais:</strong> Esvaziamento não é rotina! Só deve ser feito se houver indicação veterinária, pois a manipulação excessiva causa inflamação.</li>
+                        <li><strong>Gatos:</strong> Banhos são estressantes. Usar água morna, ambiente silencioso e contenção adequada.</li>
+                    </ul>
+                `
+            },
+            {
+                title: "Parasitologia: Vermes e Ectoparasitas",
+                content: `
+                    <h3>Endoparasitas (Vermes)</h3>
+                    <p>Combatidos com vermífugos. Podem causar diarreia, vômito, anemia e barriga inchada.</p>
+                    <ul>
+                        <li><strong>Dipylidium caninum:</strong> Verme transmitido pela ingestão de pulgas infectadas. Parece "grãos de arroz" nas fezes.</li>
+                        <li><strong>Giárdia:</strong> Protozoário que causa diarreia com muco/sangue. Zoonose (passa para humanos). Requer tratamento específico (ex: fembendazol).</li>
+                    </ul>
+                    <h3>Ectoparasitas</h3>
+                    <ul>
+                        <li><strong>Pulgas:</strong> Causam coceira e DAPP (Dermatite Alérgica à Picada de Pulga).</li>
+                        <li><strong>Carrapatos:</strong> Transmitem doenças graves como Erliquiose e Babesiose (Doença do Carrapato).</li>
+                    </ul>
+                `
+            },
+            {
+                title: "Doenças Infecciosas I (Virais)",
+                content: `
+                    <h3>Principais Viroses</h3>
+                    <ul>
+                        <li><strong>Parvovirose:</strong> Vírus resistente no ambiente. Causa gastroenterite hemorrágica (diarreia com sangue fétida), vômitos e desidratação severa. Alta mortalidade em filhotes.</li>
+                        <li><strong>Cinomose:</strong> Vírus multissistêmico. Fases: Respiratória (secreção nasal/ocular), Gastrointestinal (diarreia) e Neurológica (convulsões, mioclonias/tiques). Altamente letal ou deixa sequelas.</li>
+                        <li><strong>Raiva:</strong> Zoonose fatal. Vírus ataca o Sistema Nervoso Central. Transmissão pela saliva (mordida). Vacinação antirrábica é obrigatória.</li>
+                        <li><strong>Hepatite Infecciosa:</strong> Afeta o fígado, rins e olhos ("olho azul").</li>
+                    </ul>
+                    <p><strong>Prevenção:</strong> Vacinação ética (V8 ou V10) a partir de 45 dias de vida.</p>
+                `
+            },
+            {
+                title: "Doenças Infecciosas II (Bacterianas e Outras)",
+                content: `
+                    <h3>Leptospirose</h3>
+                    <p>Zoonose grave transmitida pela urina de ratos contaminada (em enchentes, esgotos). Bactéria penetra na pele ferida. Causa falência renal e hepática (icterícia - pele amarela).</p>
+                    <h3>Doenças do Carrapato (Hemoparasitoses)</h3>
+                    <ul>
+                        <li><strong>Erliquiose:</strong> Bactéria que ataca glóbulos brancos. Causa sangramento nasal, petéquias (manchas vermelhas), febre e anemia.</li>
+                        <li><strong>Babesiose:</strong> Protozoário que destrói glóbulos vermelhos. Causa anemia severa e urina escura.</li>
+                    </ul>
+                    <h3>Tosse dos Canis (Traqueobronquite)</h3>
+                    <p>Doença respiratória altamente contagiosa (bactéria Bordetella + vírus). Sintoma: tosse seca parecendo engasgo.</p>
+                `
+            },
+            {
+                title: "Neonatologia e Reprodução",
+                content: `
+                    <h3>Cuidados com Recém-Nascidos</h3>
+                    <p><strong>Tríade da Morte Neonatal:</strong> Hipotermia (frio), Hipoglicemia (falta de açúcar) e Desidratação.</p>
+                    <ul>
+                        <li><strong>Hipotermia:</strong> Ao nascer, o filhote molhado perde calor rápido ("efeito ar condicionado"). Deve ser seco e aquecido imediatamente.</li>
+                        <li><strong>Colostro:</strong> O primeiro leite materno. Fundamental nas primeiras 24h para passar anticorpos (imunidade) e energia.</li>
+                    </ul>
+                    <h3>Parto (Distocia)</h3>
+                    <p>Dificuldade no parto. Sinais de alerta: contrações fortes por 30min sem nascimento, feto preso, secreção verde escura antes do primeiro filhote nascer.</p>
+                `
+            },
+            {
+                title: "Primeiros Socorros Básicos",
+                content: `
+                    <h3>O que fazer (e não fazer)</h3>
+                    <p>O objetivo é estabilizar o animal até o atendimento veterinário.</p>
+                    <ul>
+                        <li><strong>Atropelamento:</strong> Mova o animal com cuidado (prancha rígida), verifique vias aéreas. Cuidado com mordidas (dor gera agressividade).</li>
+                        <li><strong>Engasgo:</strong> Tente visualizar o objeto. Se acessível, retire com pinça. Manobra de Heimlich pode ser adaptada para cães.</li>
+                        <li><strong>Convulsão:</strong> Não coloque a mão na boca (risco de mordida grave). Afaste móveis, proteja a cabeça do animal com almofada e cronometre o tempo da crise.</li>
+                        <li><strong>Hemorragia:</strong> Compressão direta no local com pano limpo. Não fazer torniquete a menos que seja amputação traumática.</li>
+                    </ul>
+                `
+            }
+        ];
+
+        // --- BANCO DE QUESTÕES (50 Itens Exclusivos Veterinária) ---
+        const questionBank = [
+            { p: "Qual a função do Colostro para o recém-nascido?", opts: ["Hidratação apenas", "Fornecer imunidade (anticorpos) e energia", "Substituir a vacina de raiva", "Limpar o intestino"], c: 1 },
+            { p: "O que causa a hipotermia logo após o parto?", opts: ["Falta de pelos", "Evaporação do líquido amniótico (corpo molhado)", "Fome", "Contato com a mãe"], c: 1 },
+            { p: "Qual equipamento é essencial para conter cães agressivos e prevenir mordidas?", opts: ["Guia simples", "Focinheira", "Colar elizabetano", "Caixa de transporte"], c: 1 },
+            { p: "A técnica do 'Burrito' ou 'Charuto' com toalha é usada principalmente em:", opts: ["Cães grandes", "Gatos", "Cavalos", "Aves"], c: 1 },
+            { p: "O que o Auxiliar Veterinário NÃO pode fazer?", opts: ["Limpar o canil", "Conter animais", "Realizar cirurgias e receitar remédios", "Alimentar internados"], c: 2 },
+            { p: "A Parvovirose é caracterizada principalmente por:", opts: ["Tosse seca", "Diarreia sanguinolenta fétida e vômito", "Queda de pelo", "Agressividade"], c: 1 },
+            { p: "A Cinomose pode deixar sequelas graves no sistema:", opts: ["Digestório", "Nervoso (mioclonias/convulsões)", "Ósseo", "Reprodutor"], c: 1 },
+            { p: "A Raiva é transmitida principalmente por:", opts: ["Arranhadura", "Saliva (mordida)", "Urina", "Fezes"], c: 1 },
+            { p: "A Leptospirose é transmitida pelo contato com:", opts: ["Urina de roedores contaminada", "Picada de carrapato", "Picada de mosquito", "Mordida de cão"], c: 0 },
+            { p: "Qual o vetor (transmissor) da Babesiose e Erliquiose?", opts: ["Pulga", "Mosquito", "Carrapato", "Mosca"], c: 2 },
+            { p: "Dipylidium caninum é um verme transmitido pela ingestão de:", opts: ["Carne crua", "Pulgas", "Terra", "Água suja"], c: 1 },
+            { p: "Alimento PROIBIDO para cães por ser tóxico:", opts: ["Cenoura", "Chocolate", "Maçã sem semente", "Frango cozido"], c: 1 },
+            { p: "Ao cortar unhas, deve-se ter cuidado com:", opts: ["O sabugo (vaso sanguíneo)", "A cor do esmalte", "A sujeira", "O tamanho da pata"], c: 0 },
+            { p: "Em caso de convulsão, você deve:", opts: ["Segurar a língua do animal", "Dar água com açúcar", "Proteger a cabeça e não colocar a mão na boca", "Jogar água fria"], c: 2 },
+            { p: "O descarte de agulhas e bisturis deve ser feito em:", opts: ["Lixo comum", "Lixo reciclável", "Caixa coletora de perfurocortantes (Descarpack)", "Vaso sanitário"], c: 2 },
+            { p: "A 'Tosse dos Canis' é uma doença:", opts: ["Renal", "Respiratória", "Cardíaca", "Dermatológica"], c: 1 },
+            { p: "Qual a temperatura normal média de um cão/gato adulto?", opts: ["36-37°C", "38-39°C", "33-35°C", "40-42°C"], c: 1 },
+            { p: "O que é Zoonose?", opts: ["Doença de zoológico", "Doença transmitida entre animais e humanos", "Doença só de animais", "Doença genética"], c: 1 },
+            { p: "Para proteção auricular no banho, usamos:", opts: ["Cotonete", "Algodão (preferencialmente impermeável)", "Tampa de plástico", "Nada"], c: 1 },
+            { p: "A Giardíase é causada por um:", opts: ["Vírus", "Protozoário", "Bactéria", "Fungo"], c: 1 },
+            { p: "Sinais de parto difícil (distocia) incluem:", opts: ["Nascimento rápido", "Contrações fortes por 30min sem nascimento", "Mãe lambendo filhotes", "Filhotes mamando"], c: 1 },
+            { p: "O uso de 'cambão' em gatos é:", opts: ["Recomendado sempre", "Desaconselhado (causa pânico/enforcamento), usado só em extremo risco", "Padrão ouro", "Indiferente"], c: 1 },
+            { p: "A vacina V8 ou V10 protege contra:", opts: ["Apenas Raiva", "Várias doenças virais e bacterianas (Cinomose, Parvo, Lepto...)", "Vermes", "Pulgas"], c: 1 },
+            { p: "O que é Icterícia?", opts: ["Pele vermelha", "Mucosas/pele amareladas (problema hepático)", "Pele azulada", "Manchas pretas"], c: 1 },
+            { p: "Aproxime-se de um cão desconhecido:", opts: ["Olhando nos olhos e correndo", "De frente e abraçando", "Com calma, observando sinais corporais, sem encarar", "Gritando"], c: 2 },
+            { p: "Qual o risco de dar ossos de galinha cozidos?", opts: ["Nenhum", "Lascam e podem perfurar o intestino", "Engordam", "Causam cárie"], c: 1 },
+            { p: "EPIs básicos na clínica incluem:", opts: ["Luvas e Jaleco", "Capacete", "Colete à prova de balas", "Botas de couro"], c: 0 },
+            { p: "A Leishmaniose é transmitida pelo:", opts: ["Carrapato", "Mosquito Palha", "Pulga", "Rato"], c: 1 },
+            { p: "Sintoma comum de Erliquiose (Doença do carrapato):", opts: ["Sangramento nasal e petéquias", "Queda de dente", "Unha encravada", "Cegueira súbita"], c: 0 },
+            { p: "A castração ajuda a prevenir:", opts: ["Verminose", "Piometra (infecção uterina) e tumores mamários/testiculares", "Pulgas", "Raiva"], c: 1 },
+            { p: "Em gatos, o jejum prolongado pode causar:", opts: ["Emagrecimento saudável", "Lipidose Hepática (dano grave ao fígado)", "Melhora do pelo", "Nada"], c: 1 },
+            { p: "A via de administração de vacinas geralmente é:", opts: ["Oral", "Subcutânea", "Intravenosa", "Intra-óssea"], c: 1 },
+            { p: "O que é 'Sabugo' na unha?", opts: ["Sujeira", "A parte vascularizada e inervada", "A ponta morta", "O fungo"], c: 1 },
+            { p: "Cães braquicefálicos (focinho curto, ex: Pug) têm maior risco de:", opts: ["Problemas respiratórios e hipertermia", "Ter pulgas", "Crescer muito", "Ter raiva"], c: 0 },
+            { p: "A coloração azulada das mucosas (Cianose) indica:", opts: ["Saúde", "Falta de oxigênio", "Febre", "Fome"], c: 1 },
+            { p: "O teste de fluoresceína serve para diagnosticar:", opts: ["Fratura", "Úlcera de córnea (olho)", "Sarna", "Verme"], c: 1 },
+            { p: "A limpeza das glândulas adanais deve ser feita:", opts: ["Em todo banho", "Nunca", "Apenas se houver indicação clínica/inflamação", "Diariamente"], c: 2 },
+            { p: "O que é Eutanásia?", opts: ["Cirurgia", "Morte assistida indolor para aliviar sofrimento irreversível", "Banho terapêutico", "Internação"], c: 1 },
+            { p: "Quem autoriza a eutanásia?", opts: ["O auxiliar", "O vizinho", "O tutor (dono) com indicação do veterinário", "A prefeitura"], c: 2 },
+            { p: "Sarna Sarcóptica (Escabiose) é:", opts: ["Não contagiosa", "Zoonose (pega em humanos) e causa muita coceira", "Causada por fungo", "Genética"], c: 1 },
+            { p: "Dermatofitose é causada por:", opts: ["Vermes", "Fungos", "Bactérias", "Vírus"], c: 1 },
+            { p: "A vermifugação de filhotes geralmente começa com:", opts: ["1 ano", "15 a 30 dias de vida", "6 meses", "Nunca"], c: 1 },
+            { p: "Um cão em posição de 'Oração' (patas dianteiras esticadas, traseiras em pé) indica:", opts: ["Brincadeira", "Dor abdominal intensa", "Sono", "Fome"], c: 1 },
+            { p: "Gatos são carnívoros estritos e precisam de:", opts: ["Muitos carboidratos", "Taurina (aminoácido essencial)", "Apenas vegetais", "Açúcar"], c: 1 },
+            { p: "A uva e uva passa podem causar em cães:", opts: ["Alergia", "Falência Renal Aguda", "Diarreia leve", "Tosse"], c: 1 },
+            { p: "Produtos de limpeza comuns (ex: água sanitária pura) podem:", opts: ["Ser usados no animal", "Causar intoxicação e queimaduras nas patas", "Curar sarna", "Limpar dentes"], c: 1 },
+            { p: "O período de gestação da cadela é em média:", opts: ["3 meses", "58 a 63 dias (2 meses)", "9 meses", "30 dias"], c: 1 },
+            { p: "A frequência cardíaca de um cão pequeno é:", opts: ["Mais lenta que um grande", "Mais rápida que um grande", "Igual a um humano", "Muito lenta"], c: 1 },
+            { p: "Otite é a inflamação do:", opts: ["Olho", "Ouvido", "Umbigo", "Dente"], c: 1 },
+            { p: "Oximetria mede:", opts: ["Pressão arterial", "Saturação de oxigênio no sangue", "Temperatura", "Glicose"], c: 1 }
+        ];
+
+        // --- LÓGICA DA APLICAÇÃO ---
+        const app = {
+            state: {
+                currentModule: 0,
+                maxModuleReached: 0,
+                examAttempts: 0,
+                examPassed: false,
+                currentQuizType: null, 
+                currentQuestions: [],
+                score: 0,
+                currentView: 'home'
+            },
+
+            init() {
+                this.loadState();
+                this.renderModuleList();
+                this.updateUI();
+                if (this.state.currentView) {
+                    this.navigate(this.state.currentView);
+                } else {
+                    this.navigate('home');
+                }
+            },
+
+            loadState() {
+                const saved = localStorage.getItem('vetCursoState');
+                if (saved) {
+                    this.state = { ...this.state, ...JSON.parse(saved) };
+                }
+            },
+
+            saveState() {
+                localStorage.setItem('vetCursoState', JSON.stringify(this.state));
+                this.updateUI();
+            },
+
+            navigate(viewName) {
+                this.state.currentView = viewName;
+                this.saveState();
+
+                document.getElementById('view-home').classList.add('hidden');
+                document.getElementById('view-course').classList.add('hidden');
+                
+                document.getElementById('nav-home').classList.remove('bg-white', 'shadow-sm', 'text-slate-900');
+                document.getElementById('nav-course').classList.remove('bg-white', 'shadow-sm', 'text-slate-900');
+
+                document.getElementById(`view-${viewName}`).classList.remove('hidden');
+                
+                const activeBtn = document.getElementById(`nav-${viewName}`);
+                if(activeBtn) {
+                    activeBtn.classList.add('bg-white', 'shadow-sm', 'text-slate-900');
+                    activeBtn.classList.remove('text-slate-600');
+                }
+
+                if (viewName === 'course') {
+                    document.getElementById('navProgressContainer').classList.remove('hidden');
+                    document.getElementById('navProgressContainer').classList.add('flex');
+                    this.renderCurrentModule();
+                } else {
+                    document.getElementById('navProgressContainer').classList.add('hidden');
+                    document.getElementById('navProgressContainer').classList.remove('flex');
+                }
+                
+                window.scrollTo(0, 0);
+            },
+
+            updateUI() {
+                const percent = Math.round(((this.state.maxModuleReached + 1) / courseContent.length) * 100);
+                const finalPercent = percent > 100 ? 100 : percent;
+                
+                const circle = document.getElementById('progressCircle');
+                if(circle) {
+                    const circumference = 100; 
+                    const offset = circumference - (finalPercent / 100) * circumference;
+                    circle.style.strokeDashoffset = offset;
+                }
+                document.getElementById('progressText').innerText = `${finalPercent}%`;
+
+                document.getElementById('btnPrev').disabled = this.state.currentModule === 0;
+                document.getElementById('btnNext').innerText = 
+                    this.state.currentModule === courseContent.length - 1 ? 'Concluir Leitura' : 'Próximo';
+
+                const items = document.querySelectorAll('.nav-item');
+                items.forEach((item, idx) => {
+                    if (idx === this.state.currentModule) {
+                        item.classList.add('active');
+                    } else {
+                        item.classList.remove('active');
+                    }
+                    
+                    if (idx <= this.state.maxModuleReached) {
+                        const icon = item.querySelector('i');
+                        icon.className = 'fa-solid fa-check-circle text-sky-500 mr-3 text-xs';
+                    }
+                });
+
+                const isFinished = this.state.maxModuleReached >= courseContent.length - 1;
+                const certPanel = document.getElementById('certificatePanel');
+                const contentViewer = document.getElementById('contentViewer');
+                
+                if (isFinished && this.state.examPassed) {
+                    contentViewer.classList.add('hidden');
+                    certPanel.classList.remove('hidden');
+                } else {
+                    if(!this.state.examPassed) {
+                        certPanel.classList.add('hidden');
+                        if(document.getElementById('quizInterface').classList.contains('hidden')) {
+                             contentViewer.classList.remove('hidden');
+                        }
+                    }
+                }
+                
+                const examBtn = document.getElementById('examLockIcon');
+                if (this.state.maxModuleReached < courseContent.length - 1) {
+                    examBtn.className = 'fa-solid fa-lock text-slate-500 group-hover:text-white transition';
+                } else {
+                    examBtn.className = 'fa-solid fa-unlock text-green-400 group-hover:text-white transition';
+                }
+            },
+
+            renderModuleList() {
+                const list = document.getElementById('moduleList');
+                list.innerHTML = courseContent.map((mod, idx) => `
+                    <li onclick="app.goToModule(${idx})" class="nav-item p-3 flex items-center">
+                        <i class="fa-regular fa-circle mr-3 text-xs text-slate-300"></i>
+                        <span class="text-sm truncate">${idx + 1}. ${mod.title}</span>
+                    </li>
+                `).join('');
+            },
+
+            renderCurrentModule() {
+                const mod = courseContent[this.state.currentModule];
+                const viewer = document.getElementById('moduleContent');
+                
+                document.getElementById('moduleTitle').innerText = mod.title;
+                
+                viewer.parentElement.classList.remove('fade-in');
+                void viewer.parentElement.offsetWidth;
+                viewer.parentElement.classList.add('fade-in');
+
+                viewer.innerHTML = mod.content;
+                this.updateUI();
+            },
+
+            nextModule() {
+                if (this.state.currentModule < courseContent.length - 1) {
+                    this.state.currentModule++;
+                    if (this.state.currentModule > this.state.maxModuleReached) {
+                        this.state.maxModuleReached = this.state.currentModule;
+                    }
+                    this.saveState();
+                    this.renderCurrentModule();
+                } else {
+                    if (this.state.maxModuleReached < courseContent.length - 1) {
+                        this.state.maxModuleReached = courseContent.length - 1;
+                    }
+                    this.saveState();
+                    this.showAlert('Parabéns!', 'Você finalizou todo o conteúdo teórico. Agora está pronto para o Simulado ou a Prova Oficial!', 'fa-graduation-cap');
+                }
+            },
+
+            prevModule() {
+                if (this.state.currentModule > 0) {
+                    this.state.currentModule--;
+                    this.saveState();
+                    this.renderCurrentModule();
+                }
+            },
+
+            goToModule(idx) {
+                this.state.currentModule = idx;
+                if (idx > this.state.maxModuleReached) {
+                    this.state.maxModuleReached = idx;
+                }
+                this.saveState();
+                this.renderCurrentModule();
+            },
+
+            shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            },
+
+            startPractice() {
+                this.state.currentQuizType = 'practice';
+                const shuffled = this.shuffleArray([...questionBank]);
+                this.state.currentQuestions = shuffled.slice(0, 15);
+                this.renderQuiz('Simulado de Fixação');
+            },
+
+            checkExamEligibility() {
+                if (this.state.maxModuleReached < courseContent.length - 1) {
+                    this.showAlert('Atenção', 'Você precisa concluir a leitura de todos os módulos antes de fazer a prova.', 'fa-lock');
+                    return;
+                }
+                if (this.state.examPassed) {
+                    this.showAlert('Aprovado', 'Você já foi aprovado nesta prova! Seu certificado já está disponível.', 'fa-check-double');
+                    return;
+                }
+                if (this.state.examAttempts >= 3) {
+                    this.showAlert('Bloqueado', 'Você excedeu o número de 3 tentativas. Entre em contato com a secretaria.', 'fa-ban');
+                    return;
+                }
+                
+                const confirmStart = confirm(`Você tem ${3 - this.state.examAttempts} tentativas restantes. Deseja iniciar a prova oficial?`);
+                if (confirmStart) {
+                    this.startExam();
+                }
+            },
+
+            startExam() {
+                this.state.currentQuizType = 'exam';
+                const shuffled = this.shuffleArray([...questionBank]);
+                this.state.currentQuestions = shuffled.slice(0, 20);
+                this.renderQuiz('Prova Final Oficial');
+            },
+
+            renderQuiz(title) {
+                document.getElementById('contentViewer').classList.add('hidden');
+                document.getElementById('quizInterface').classList.remove('hidden');
+                document.getElementById('certificatePanel').classList.add('hidden');
+                document.getElementById('quizTitle').innerText = title;
+
+                const container = document.getElementById('quizContainer');
+                container.innerHTML = this.state.currentQuestions.map((q, idx) => `
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition question-block" data-idx="${idx}">
+                        <div class="flex items-start gap-4">
+                            <span class="bg-slate-900 text-white text-xs font-bold px-3 py-1 rounded-full mt-1">Questão ${idx + 1}</span>
+                            <p class="font-bold text-slate-800 text-lg flex-1">${q.p}</p>
+                        </div>
+                        <div class="space-y-3 mt-6 ml-2">
+                            ${q.opts.map((opt, optIdx) => `
+                                <label class="flex items-center space-x-4 p-4 rounded-xl border border-slate-100 cursor-pointer hover:bg-sky-50 hover:border-sky-200 transition group">
+                                    <div class="relative flex items-center justify-center w-5 h-5 shrink-0">
+                                        <input type="radio" name="q_${idx}" value="${optIdx}" class="peer appearance-none w-5 h-5 border-2 border-slate-300 rounded-full checked:border-sky-600 checked:bg-sky-600 transition-colors">
+                                        <div class="absolute w-2 h-2 bg-white rounded-full opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    </div>
+                                    <span class="text-slate-600 peer-checked:text-slate-900 peer-checked:font-medium">${opt}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('');
+                
+                window.scrollTo(0,0);
+            },
+
+            closeQuiz() {
+                if (confirm('Deseja sair da avaliação? O progresso desta tentativa será perdido.')) {
+                    document.getElementById('quizInterface').classList.add('hidden');
+                    document.getElementById('contentViewer').classList.remove('hidden');
+                    if(this.state.examPassed) document.getElementById('certificatePanel').classList.remove('hidden');
+                }
+            },
+
+            submitQuiz() {
+                const inputs = document.querySelectorAll('input[type="radio"]:checked');
+                if (inputs.length < this.state.currentQuestions.length) {
+                    this.showAlert('Atenção', 'Por favor, responda todas as perguntas antes de finalizar.', 'fa-exclamation-circle');
+                    return;
+                }
+
+                let hits = 0;
+                this.state.currentQuestions.forEach((q, idx) => {
+                    const selected = parseInt(document.querySelector(`input[name="q_${idx}"]:checked`).value);
+                    const isCorrect = selected === q.c;
+                    if (isCorrect) hits++;
+                });
+
+                const total = this.state.currentQuestions.length;
+                const score = (hits / total) * 10;
+                
+                if (this.state.currentQuizType === 'practice') {
+                    this.showAlert('Resultado', `Você acertou ${hits} de ${total} questões.\nNota: ${score.toFixed(1)}`, 'fa-dumbbell');
+                    document.getElementById('quizInterface').classList.add('hidden');
+                    document.getElementById('contentViewer').classList.remove('hidden');
+                } else {
+                    this.state.examAttempts++;
+                    if (score >= 7.0) {
+                        this.state.examPassed = true;
+                        this.state.score = score;
+                        this.saveState();
+                        this.showAlert('APROVADO!', `Parabéns! Sua nota foi ${score.toFixed(1)}. O certificado foi liberado.`, 'fa-trophy');
+                        document.getElementById('quizInterface').classList.add('hidden');
+                        document.getElementById('certificatePanel').classList.remove('hidden');
+                    } else {
+                        const remaining = 3 - this.state.examAttempts;
+                        this.saveState();
+                        if (remaining > 0) {
+                            this.showAlert('Reprovado', `Sua nota foi ${score.toFixed(1)}. Necessário 7.0.\nTentativas restantes: ${remaining}`, 'fa-times-circle');
+                        } else {
+                            this.showAlert('Bloqueado', `Sua nota foi ${score.toFixed(1)}. Você esgotou suas 3 tentativas.`, 'fa-ban');
+                        }
+                        document.getElementById('quizInterface').classList.add('hidden');
+                        document.getElementById('contentViewer').classList.remove('hidden');
+                    }
+                }
+            },
+
+            requestCertificate(e) {
+                e.preventDefault();
+                const name = document.getElementById('certName').value;
+                const cpf = document.getElementById('certCPF').value;
+                const rg = document.getElementById('certRG').value;
+                
+                const text = `*SOLICITAÇÃO DE CERTIFICADO*\n\nCurso: Auxiliar de Veterinário\nAluno: ${name}\nCPF: ${cpf}\nRG: ${rg}\nNota Final: ${this.state.score.toFixed(1)}\nStatus: APROVADO`;
+                
+                const encoded = encodeURIComponent(text);
+                
+                this.showAlert('Redirecionando', 'Você será redirecionado para o WhatsApp. Envie a mensagem gerada.', 'fa-whatsapp');
+                setTimeout(() => {
+                     // Updated number as requested
+                     window.open(`https://wa.me/5561998300711?text=${encoded}`, '_blank');
+                }, 2000);
+            },
+
+            showAlert(title, msg, icon) {
+                document.getElementById('alertTitle').innerText = title;
+                document.getElementById('alertMsg').innerText = msg;
+                document.getElementById('alertIcon').className = `text-5xl mb-6 text-sky-500 fa-solid ${icon}`;
+                document.getElementById('alertModal').classList.remove('hidden');
+            }
+        };
+
+        // Start
+        app.init();
+    </script>
+</body>
+</html>

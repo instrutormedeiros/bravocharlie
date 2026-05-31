@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Curso de Atendente de Farmácia - Portal Profissional</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Tipografia do Conteúdo */
+        .prose h3 { color: #047857; font-weight: 800; margin-top: 2em; margin-bottom: 0.8em; font-size: 1.4rem; border-left: 5px solid #10b981; padding-left: 1rem; }
+        .prose p { margin-bottom: 1.2em; line-height: 1.8; color: #374151; font-size: 1.05rem; text-align: justify; }
+        .prose ul { list-style-type: none; margin-bottom: 1.5em; }
+        .prose li { margin-bottom: 0.8em; padding-left: 1.5em; position: relative; }
+        .prose li::before { content: "\f058"; font-family: "Font Awesome 6 Free"; font-weight: 900; position: absolute; left: 0; color: #10b981; font-size: 0.9em; top: 4px;}
+        
+        /* Animações */
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Componentes */
+        .btn-primary { @apply bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 transition duration-300 font-semibold shadow-md text-center inline-block cursor-pointer; }
+        .btn-outline { @apply border-2 border-emerald-600 text-emerald-700 px-6 py-3 rounded-lg hover:bg-emerald-50 transition duration-300 font-semibold text-center inline-block cursor-pointer; }
+        
+        .card { @apply bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden; }
+        /* Cursor pointer forçado */
+        .nav-link { @apply text-gray-500 hover:text-emerald-600 px-3 py-2 rounded-md text-sm font-medium transition-colors; cursor: pointer !important; }
+        .nav-link.active { @apply text-emerald-700 bg-emerald-50 font-bold; }
+        
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #6ee7b7; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #34d399; }
+
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col text-gray-800">
+
+    <!-- Navbar Profissional -->
+    <nav class="bg-white shadow-md sticky top-0 z-50 border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20 items-center">
+                <!-- Logo / Título -->
+                <div class="flex items-center cursor-pointer" onclick="app.navigate('home')">
+                    <div class="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center text-white mr-3">
+                        <i class="fa-solid fa-pills text-xl"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="font-extrabold text-2xl tracking-tight leading-none text-emerald-900">ATENDENTE DE FARMÁCIA</span>
+                        <span class="text-xs text-emerald-600 font-bold tracking-widest uppercase mt-1">Capacitação Profissional</span>
+                    </div>
+                </div>
+
+                <!-- Menu Desktop -->
+                <div class="hidden md:flex items-center space-x-4">
+                    <span onclick="app.navigate('home')" class="nav-link" id="link-home">Início</span>
+                    <span onclick="app.navigate('course')" class="nav-link" id="link-course">Área do Aluno</span>
+                </div>
+
+                <!-- Barra de Progresso (Só aparece na área do curso) -->
+                <div id="navProgressContainer" class="hidden items-center space-x-3 bg-gray-100 px-4 py-2 rounded-full border border-gray-200">
+                    <div class="text-xs text-gray-500 font-semibold">Progresso:</div>
+                    <div class="w-24 h-2 bg-gray-300 rounded-full overflow-hidden">
+                        <div id="progressBar" class="h-full bg-emerald-500 transition-all duration-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" style="width: 0%"></div>
+                    </div>
+                    <span id="progressText" class="text-xs font-bold text-emerald-700">0%</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Views Container -->
+    <main class="flex-grow">
+        
+        <!-- VIEW: HOME (Landing Page) -->
+        <div id="view-home" class="fade-in">
+            <!-- Hero Section -->
+            <section class="relative bg-emerald-900 text-white py-24 overflow-hidden">
+                <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1587854692152-cbe660dbde88?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80')] bg-cover bg-center opacity-10"></div>
+                <div class="max-w-7xl mx-auto px-4 relative z-10 text-center">
+                    <span class="bg-emerald-700 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-6 inline-block border border-emerald-500">Curso Completo</span>
+                    <h1 class="text-4xl md:text-6xl font-extrabold mb-6 leading-tight">
+                        Excelência no Atendimento<br>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-200 to-teal-400">Farmacêutico</span>
+                    </h1>
+                    <p class="text-xl text-emerald-100 mb-10 max-w-2xl mx-auto">
+                        Domine a farmacologia, a dispensação de medicamentos e as técnicas de vendas para se destacar no mercado farmacêutico.
+                    </p>
+                    <div class="flex flex-col sm:flex-row justify-center gap-4">
+                        <button onclick="app.navigate('course')" class="btn-primary text-lg px-8 py-4 bg-white text-emerald-900 hover:bg-gray-100 border-none shadow-lg">
+                            Começar Agora
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Features -->
+            <section class="py-20 bg-white">
+                <div class="max-w-7xl mx-auto px-4">
+                    <div class="text-center mb-16">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-4">O que você vai aprender</h2>
+                        <div class="w-20 h-1 bg-emerald-500 mx-auto"></div>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-3 gap-10">
+                        <div class="text-center p-6 rounded-xl hover:shadow-xl transition duration-300 border border-transparent hover:border-emerald-100 group">
+                            <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-6 text-2xl group-hover:bg-emerald-600 group-hover:text-white transition">
+                                <i class="fa-solid fa-prescription-bottle-medical"></i>
+                            </div>
+                            <h3 class="text-xl font-bold mb-3 text-gray-800">Farmacologia Aplicada</h3>
+                            <p class="text-gray-600">Entenda os tipos de medicamentos (Referência, Genérico, Similar), formas farmacêuticas e vias de administração.</p>
+                        </div>
+                        <div class="text-center p-6 rounded-xl hover:shadow-xl transition duration-300 border border-transparent hover:border-emerald-100 group">
+                            <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-6 text-2xl group-hover:bg-emerald-600 group-hover:text-white transition">
+                                <i class="fa-solid fa-hand-holding-medical"></i>
+                            </div>
+                            <h3 class="text-xl font-bold mb-3 text-gray-800">Dispensação e Ética</h3>
+                            <p class="text-gray-600">Aprenda a ler receitas, orientar pacientes, controlar estoque e seguir as normas da ANVISA.</p>
+                        </div>
+                        <div class="text-center p-6 rounded-xl hover:shadow-xl transition duration-300 border border-transparent hover:border-emerald-100 group">
+                            <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-6 text-2xl group-hover:bg-emerald-600 group-hover:text-white transition">
+                                <i class="fa-solid fa-users"></i>
+                            </div>
+                            <h3 class="text-xl font-bold mb-3 text-gray-800">Atendimento ao Cliente</h3>
+                            <p class="text-gray-600">Técnicas de vendas, postura profissional e fidelização do cliente no ambiente da drogaria.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- VIEW: COURSE -->
+        <div id="view-course" class="hidden fade-in container mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Sidebar (Menu) -->
+            <aside class="lg:col-span-3 space-y-6">
+                <!-- Course Info Card -->
+                <div class="card p-6 text-center border-t-4 border-emerald-500">
+                    <h2 class="text-lg font-bold text-gray-800">Material Didático</h2>
+                    <p class="text-xs text-gray-500 mb-4 mt-1">Apostila Digital</p>
+                    <a href="atendentedefarmacia.pdf" download class="btn-outline w-full block text-sm py-2">
+                        <i class="fa-solid fa-file-pdf mr-2"></i> Baixar PDF
+                    </a>
+                </div>
+
+                <!-- Navigation Menu -->
+                <div class="card p-0">
+                    <h3 class="font-bold text-gray-800 p-4 border-b bg-gray-50">Módulos do Curso</h3>
+                    <div class="max-h-[500px] overflow-y-auto custom-scrollbar">
+                        <ul class="text-sm divide-y divide-gray-100" id="moduleList">
+                            <!-- Modules injected via JS -->
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="card p-5 space-y-4 bg-emerald-50 border-emerald-100">
+                    <h3 class="font-bold text-emerald-800 text-sm uppercase tracking-wider mb-2">Avaliações</h3>
+                    <button onclick="app.startPractice()" class="w-full bg-white border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg hover:bg-emerald-100 transition text-left flex items-center justify-between group shadow-sm">
+                        <span class="font-semibold"><i class="fa-solid fa-list-check mr-2"></i> Simulado Prático</span>
+                        <i class="fa-solid fa-chevron-right text-emerald-300 group-hover:text-emerald-600"></i>
+                    </button>
+                    <button onclick="app.checkExamEligibility()" class="w-full bg-emerald-700 text-white px-4 py-3 rounded-lg hover:bg-emerald-800 transition text-left flex items-center justify-between group shadow-md">
+                        <span class="font-bold"><i class="fa-solid fa-graduation-cap mr-2"></i> Prova Final</span>
+                        <i class="fa-solid fa-lock text-emerald-300 group-hover:text-white" id="examLockIcon"></i>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Content Area -->
+            <section class="lg:col-span-9">
+                
+                <!-- Module Viewer -->
+                <div id="contentViewer" class="card p-8 md:p-12 min-h-[600px] relative">
+                    <div id="moduleHeader" class="mb-8 border-b pb-4">
+                        <span class="text-emerald-600 font-bold text-sm uppercase tracking-wider mb-2 block">Módulo Atual</span>
+                        <h2 id="moduleTitle" class="text-3xl font-extrabold text-gray-900">Carregando...</h2>
+                    </div>
+
+                    <div id="moduleContent" class="prose max-w-none text-gray-700">
+                        <!-- Dynamic Content -->
+                        <div class="text-center py-20">
+                            <i class="fa-solid fa-spinner fa-spin text-4xl text-emerald-600 mb-4"></i>
+                            <p>Carregando conteúdo didático...</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Navigation Buttons -->
+                    <div class="flex justify-between mt-16 pt-8 border-t border-gray-100" id="navButtons">
+                        <button onclick="app.prevModule()" id="btnPrev" class="px-6 py-3 rounded-lg border border-gray-300 text-gray-600 font-semibold hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="fa-solid fa-arrow-left mr-2"></i> Anterior
+                        </button>
+                        <button onclick="app.nextModule()" id="btnNext" class="btn-primary">
+                            Próximo <i class="fa-solid fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quiz/Exam Interface (Hidden by default) -->
+                <div id="quizInterface" class="card p-8 hidden">
+                    <div class="flex justify-between items-center mb-6 border-b pb-4 bg-emerald-50 -m-8 p-8 rounded-t-xl">
+                        <div>
+                            <span class="text-xs font-bold text-emerald-600 uppercase">Modo Avaliação</span>
+                            <h2 id="quizTitle" class="text-2xl font-bold text-gray-800">Avaliação</h2>
+                        </div>
+                        <button onclick="app.closeQuiz()" class="text-gray-400 hover:text-red-500 transition bg-white p-2 rounded-full shadow-sm hover:shadow-md">
+                            <i class="fa-solid fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <div id="quizContainer" class="space-y-8 mt-8">
+                        <!-- Questions injected here -->
+                    </div>
+
+                    <div class="mt-12 text-right border-t pt-6">
+                        <button onclick="app.submitQuiz()" class="bg-emerald-600 text-white px-8 py-4 rounded-lg hover:bg-emerald-700 transition font-bold shadow-lg text-lg">
+                            Finalizar Avaliação <i class="fa-solid fa-check ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Certificate Request (Hidden by default) -->
+                <div id="certificatePanel" class="card p-12 hidden text-center max-w-3xl mx-auto mt-10 border-t-8 border-emerald-500">
+                    <div class="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fa-solid fa-award text-5xl text-emerald-600"></i>
+                    </div>
+                    <h2 class="text-4xl font-extrabold text-gray-900 mb-2">Aprovação Confirmada!</h2>
+                    <p class="text-gray-600 mb-8 text-lg">Você concluiu o curso de Atendente de Farmácia com êxito.</p>
+                    
+                    <div class="bg-gray-50 p-8 rounded-xl border border-gray-200 text-left max-w-lg mx-auto">
+                        <h3 class="font-bold text-gray-800 mb-4 border-b pb-2">Dados para Emissão</h3>
+                        <form id="certForm" onsubmit="app.requestCertificate(event)" class="space-y-5">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Nome Completo</label>
+                                <input type="text" id="certName" required class="w-full border-gray-300 rounded-lg shadow-sm p-3 border focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">CPF</label>
+                                    <input type="text" id="certCPF" required placeholder="000.000.000-00" class="w-full border-gray-300 rounded-lg shadow-sm p-3 border focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">RG</label>
+                                    <input type="text" id="certRG" required class="w-full border-gray-300 rounded-lg shadow-sm p-3 border focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg shadow-md transition flex items-center justify-center mt-4 cursor-pointer">
+                                <i class="fa-brands fa-whatsapp text-2xl mr-2"></i> Solicitar via WhatsApp
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+            </section>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white text-gray-500 py-8 border-t border-gray-100 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-sm">© 2024 Curso Atendente de Farmácia. Todos os direitos reservados.</p>
+            <p class="text-xs mt-2 opacity-60">Conteúdo baseado na legislação vigente (Lei 5.991/73 e RDC Anvisa).</p>
+        </div>
+    </footer>
+
+    <!-- Modal for Alerts -->
+    <div id="alertModal" class="fixed inset-0 bg-black bg-opacity-70 hidden z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full text-center fade-in transform scale-100">
+            <div id="alertIcon" class="text-5xl mb-6"></div>
+            <h3 id="alertTitle" class="text-2xl font-bold mb-3 text-gray-900"></h3>
+            <p id="alertMsg" class="text-gray-600 mb-8 leading-relaxed"></p>
+            <button onclick="document.getElementById('alertModal').classList.add('hidden')" class="btn-primary w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg">Entendido</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // --- DADOS DO CURSO (Baseado no PDF atendentedefarmacia.pdf) ---
+        const courseContent = [
+            {
+                title: "Farmácias e Drogarias: Definições",
+                content: `
+                    <h3>O que são Farmácias e Drogarias?</h3>
+                    <p><strong>Farmácias:</strong> São estabelecimentos de manipulação de fórmulas magistrais e oficiais, de comércio de drogas, medicamentos, insumos farmacêuticos e correlatos, compreendendo o de dispensação e o atendimento privativo de unidade hospitalar ou de qualquer outra equivalente de assistência médica.</p>
+                    <p><strong>Drogarias:</strong> As drogarias são estabelecimentos de dispensação e comércio de drogas, medicamentos, insumos farmacêuticos e correlatos em suas embalagens originais (art. 4º, XI, Lei 5.991/73). Portanto, a diferença é significativa, porque o aspecto comercial nas drogarias é predominante; na prática, por exemplo, a manipulação ou o fracionamento de medicamentos não é permitido na drogaria.</p>
+                    <p><strong>Semelhanças:</strong> Em ambos os estabelecimentos, de acordo com a Lei 5.991/73-art.15, é obrigatória a presença de farmacêutico durante todo o seu período de funcionamento do local.</p>
+                    <p><strong>Dispensação:</strong> É um ato típico do farmacêutico que consiste na substituição de um medicamento por outro que foi prescrito e orientação sobre a dosagem, a interação com outros medicamentos, conhecimento das reações adversas e conservação e armazenamento adequado do produto.</p>
+                `
+            },
+            {
+                title: "O Balconista de Farmácia",
+                content: `
+                    <h3>Função e Responsabilidades</h3>
+                    <p>O atendente de farmácia ou balconista é responsável pelo primeiro contato do cliente com o ponto de venda (PDV). É ele quem irá realizar o atendimento aos consumidores, sob supervisão do farmacêutico responsável, e fará a venda dos medicamentos.</p>
+                    <p><strong>Atribuições:</strong></p>
+                    <ul>
+                        <li>A venda do medicamento, sendo o contato direto com o cliente.</li>
+                        <li>Atuação nos setores de dispensação e logística de medicamentos e cosméticos.</li>
+                        <li>Recepção do cliente e interação entre ele e a empresa.</li>
+                        <li>Tradução de receitas (leitura e interpretação).</li>
+                        <li>Fornecimento de esclarecimentos sobre uso dos produtos, posologia, reações adversas.</li>
+                        <li>Avaliação das datas de validade dos produtos e limpeza das prateleiras.</li>
+                    </ul>
+                    <p><strong>Importante:</strong> O balconista ou atendente de farmácia <strong>não pode</strong> indicar ou prescrever receitas. Sua função é orientar sobre o uso correto do que foi prescrito.</p>
+                    <p>O balconista deve atuar como "relações públicas" da farmácia. A apresentação pessoal (avental limpo, unhas cortadas) é fundamental, pois reflete a higiene necessária ao manusear medicamentos.</p>
+                `
+            },
+            {
+                title: "Organização e Controle",
+                content: `
+                    <h3>Gestão do Espaço</h3>
+                    <p>O balconista da drogaria é responsável pelo espaço de vendas. Portanto, a limpeza do chão, das prateleiras e das gôndolas deve sempre estar muito bem cuidada.</p>
+                    <ul>
+                        <li><strong>Leitura de Prescrições:</strong> Deve estar habituado com o receituário médico para atender com agilidade.</li>
+                        <li><strong>Controle de Estoque:</strong> Ficar atento à reposição dos produtos para informar o gerente. Organizar o armazenamento de medicamentos, cosméticos e correlatos.</li>
+                        <li><strong>Validade:</strong> Avaliar constantemente as datas de validade. Produtos com validade maior devem ficar ao fundo da prateleira (sistema PEPS - Primeiro que Entra, Primeiro que Sai, adaptado para validade).</li>
+                        <li><strong>Processos Administrativos:</strong> Receber mercadorias, preencher relatórios e auxiliar na gestão.</li>
+                    </ul>
+                `
+            },
+            {
+                title: "Introdução à Farmacologia",
+                content: `
+                    <h3>Conceitos Básicos</h3>
+                    <p>A Farmacologia estuda como as substâncias químicas interagem com os sistemas biológicos. Alguns conceitos fundamentais:</p>
+                    <ul>
+                        <li><strong>Fármaco:</strong> Substância química com ação terapêutica (princípio ativo).</li>
+                        <li><strong>Medicamento:</strong> Produto tecnicamente elaborado contendo um ou mais fármacos (ex: comprimido, xarope).</li>
+                        <li><strong>Remédio:</strong> Todo cuidado para curar ou aliviar (inclui massagem, chás, fé, além de medicamentos).</li>
+                        <li><strong>Droga:</strong> Qualquer substância que modifica a função fisiológica.</li>
+                        <li><strong>Posologia:</strong> Estudo da dosagem e intervalos de administração.</li>
+                    </ul>
+                    <h3>Farmacocinética vs. Farmacodinâmica</h3>
+                    <p><strong>Farmacocinética:</strong> Estudo do destino do fármaco no organismo (Absorção, Distribuição, Biotransformação/Metabolismo e Eliminação). É o que o corpo faz com a droga.</p>
+                    <p><strong>Farmacodinâmica:</strong> Estudo do mecanismo de ação e efeitos bioquímicos/fisiológicos. É o que a droga faz com o corpo.</p>
+                `
+            },
+            {
+                title: "Formas Farmacêuticas e Vias de Administração",
+                content: `
+                    <h3>Formas Farmacêuticas</h3>
+                    <p>É a forma final em que se apresenta o medicamento (comprimido, cápsula, pomada, xarope) para facilitar a administração e garantir a estabilidade.</p>
+                    <h3>Vias de Administração</h3>
+                    <ul>
+                        <li><strong>Via Oral:</strong> Pela boca. Segura e econômica, mas lenta. Sofre metabolismo de primeira passagem no fígado.</li>
+                        <li><strong>Via Sublingual:</strong> Sob a língua. Absorção rápida direto para o sangue, usada em emergências (ex: pressão alta), evita o fígado inicialmente.</li>
+                        <li><strong>Via Parenteral (Injetáveis):</strong> Endovenosa (direto na veia, efeito imediato), Intramuscular (no músculo), Subcutânea (abaixo da pele).</li>
+                        <li><strong>Via Retal:</strong> Supositórios. Útil quando há vômitos ou impossibilidade de engolir.</li>
+                        <li><strong>Vias Tópicas:</strong> Cutânea (pele), Ocular (olhos), Otológica (ouvidos), Nasal.</li>
+                        <li><strong>Via Transdérmica:</strong> Adesivos que liberam a droga lentamente através da pele.</li>
+                    </ul>
+                `
+            },
+            {
+                title: "Tipos de Medicamentos",
+                content: `
+                    <h3>Classificação</h3>
+                    <p><strong>Alopáticos:</strong> Produzem efeito contrário ao da doença (ex: antitérmico para febre). Princípio "Contraria contrariis curantur". São os mais comuns em drogarias.</p>
+                    <p><strong>Homeopáticos:</strong> Baseados na "Lei dos Semelhantes" (Similia similibus curantur). Utilizam doses mínimas e dinamizadas de substâncias que causariam sintomas iguais aos da doença em pessoas sãs, estimulando o corpo a reagir.</p>
+                    <p><strong>Fitoterápicos:</strong> Feitos exclusivamente de matéria-prima vegetal (plantas medicinais industrializadas), com eficácia e riscos comprovados pela ANVISA.</p>
+                    <h3>Referência, Similar e Genérico</h3>
+                    <ul>
+                        <li><strong>Referência:</strong> Medicamento inovador, possui marca comercial e patente. Teve eficácia comprovada por estudos clínicos originais.</li>
+                        <li><strong>Genérico:</strong> Cópia fiel do referência após queda da patente. Não tem marca (nome do princípio ativo). É intercambiável (substituível) com o referência pois passou por teste de Bioequivalência.</li>
+                        <li><strong>Similar:</strong> Tem o mesmo princípio ativo e forma, possui marca comercial própria. Desde 2003, também deve comprovar equivalência para ser registrado.</li>
+                    </ul>
+                `
+            },
+            {
+                title: "Armazenamento e Biossegurança",
+                content: `
+                    <h3>Condições de Armazenamento</h3>
+                    <p>O local deve ser ventilado, longe de luz solar direta e umidade. Temperatura ideal: 15°C a 30°C. Umidade: 40% a 70%. Medicamentos termolábeis (ex: insulina) exigem geladeira (2°C a 8°C).</p>
+                    <p>A organização evita erros. Produtos violados ou vencidos devem ser segregados imediatamente.</p>
+                    <h3>Biossegurança</h3>
+                    <p>Conjunto de ações para prevenir riscos à saúde e ao ambiente.</p>
+                    <ul>
+                        <li><strong>EPIs:</strong> Uso de jaleco, luvas e máscaras quando necessário (ex: aplicação de injetáveis, testes de Covid).</li>
+                        <li><strong>Contaminação Cruzada (Mix-up):</strong> Mistura acidental de produtos ou trocas de embalagens. Evitada com processos rigorosos e atenção.</li>
+                        <li><strong>Higiene:</strong> Lavagem das mãos é fundamental antes e depois de atendimentos físicos.</li>
+                    </ul>
+                `
+            },
+            {
+                title: "Segurança do Paciente e Intoxicação",
+                content: `
+                    <h3>Uso Racional e Intoxicação</h3>
+                    <p>A automedicação é um risco grave. O balconista nunca deve incentivar o uso sem orientação.</p>
+                    <p><strong>Intoxicação Medicamentosa:</strong> Ingestão de altas doses ou interações perigosas. Sintomas: vômitos, tontura, convulsões, confusão mental. Ação: Procurar médico imediatamente. Não provocar vômito nem dar leite sem orientação.</p>
+                    <h3>Interação Medicamentosa</h3>
+                    <p>Quando um medicamento altera o efeito do outro, ou de um alimento/bebida.</p>
+                    <ul>
+                        <li><strong>Medicamento x Álcool:</strong> Pode aumentar toxicidade ou anular efeito.</li>
+                        <li><strong>Medicamento x Alimento:</strong> Ex: Leite reduz absorção de tetraciclina.</li>
+                    </ul>
+                `
+            },
+            {
+                title: "Dispensação e Receituário",
+                content: `
+                    <h3>O Ato da Dispensação</h3>
+                    <p>Não é apenas entregar a caixinha. É garantir que o paciente receba o medicamento certo, na dose certa, e entenda como usar.</p>
+                    <p><strong>Passo a Passo:</strong></p>
+                    <ol>
+                        <li><strong>Acolhimento:</strong> Receber bem o cliente.</li>
+                        <li><strong>Avaliação da Receita:</strong> Legibilidade, validade, dosagem, contraindicações. Se houver dúvida, não dispense; consulte o farmacêutico.</li>
+                        <li><strong>Orientação:</strong> Explicar horários, armazenamento e modo de uso.</li>
+                    </ol>
+                    <p><strong>Dispensação de Controlados:</strong> Exige retenção de receita e rigorosa conferência de dados (médico, paciente, comprador).</p>
+                `
+            },
+            {
+                title: "Atendimento e Cliente",
+                content: `
+                    <h3>Cliente Interno vs. Externo</h3>
+                    <p><strong>Externo:</strong> O consumidor final que compra o produto.</p>
+                    <p><strong>Interno:</strong> Colaboradores e colegas. Um bom ambiente interno reflete no atendimento externo.</p>
+                    <h3>Excelência no Atendimento</h3>
+                    <p>O atendente deve ter empatia, paciência e clareza. Lidar com saúde exige sensibilidade, pois o cliente muitas vezes está fragilizado.</p>
+                    <p>A comunicação deve ser clara, evitando termos técnicos complexos que o paciente não entenda. A fidelização ocorre pela confiança passada pelo profissional.</p>
+                `
+            }
+        ];
+
+        // --- BANCO DE QUESTÕES (50 Itens Exclusivos Farmácia) ---
+        const questionBank = [
+            { p: "Qual a principal diferença legal entre Farmácia e Drogaria (Lei 5.991/73)?", opts: ["Nenhuma, são sinônimos", "Farmácia manipula fórmulas, Drogaria vende industrializados", "Drogaria vende cosméticos, Farmácia não", "Farmácia só vende ervas"], c: 1 },
+            { p: "O que é Dispensação?", opts: ["Venda simples de produto", "Fabricação do remédio", "Ato de fornecer medicamento com orientação", "Armazenamento no estoque"], c: 2 },
+            { p: "Qual profissional deve estar presente durante todo o horário de funcionamento da farmácia?", opts: ["Gerente", "Farmacêutico", "Dono", "Segurança"], c: 1 },
+            { p: "O Balconista de Farmácia PODE:", opts: ["Prescrever antibióticos", "Diagnosticar doenças", "Orientar sobre o uso prescrito", "Alterar a receita médica"], c: 2 },
+            { p: "O que é Farmacocinética?", opts: ["O que a droga faz no corpo", "O caminho da droga no corpo (absorção, eliminação)", "Estudo das plantas", "Preparo de fórmulas"], c: 1 },
+            { p: "Medicamentos Alopáticos baseiam-se no princípio da:", opts: ["Cura pelo semelhante", "Cura pelo contrário", "Cura pela fé", "Cura natural"], c: 1 },
+            { p: "Medicamentos Homeopáticos utilizam:", opts: ["Doses massivas", "Doses mínimas e dinamizadas", "Apenas plantas", "Produtos sintéticos puros"], c: 1 },
+            { p: "Um medicamento Fitoterápico é feito exclusivamente de:", opts: ["Minerais", "Derivados vegetais", "Produtos químicos sintéticos", "Animais"], c: 1 },
+            { p: "Medicamento de Referência é:", opts: ["A cópia do genérico", "O inovador com eficácia comprovada primeiro", "Aquele sem marca", "O mais barato"], c: 1 },
+            { p: "Medicamento Genérico é identificado por:", opts: ["Nome comercial", "Embalagem vermelha", "Princípio ativo e tarja amarela com G", "Preço alto"], c: 2 },
+            { p: "O medicamento Genérico é intercambiável com o Referência porque passou por teste de:", opts: ["Sabor", "Bioequivalência", "Cor", "Marketing"], c: 1 },
+            { p: "Via de administração que coloca o medicamento sob a língua:", opts: ["Oral", "Sublingual", "Parenteral", "Tópica"], c: 1 },
+            { p: "Principal vantagem da via Sublingual:", opts: ["Sabor agradável", "Absorção rápida e evita primeira passagem no fígado", "Efeito lento", "Uso em grandes volumes"], c: 1 },
+            { p: "Via Parenteral refere-se a:", opts: ["Comprimidos", "Supositórios", "Injetáveis", "Pomadas"], c: 2 },
+            { p: "Temperatura ideal para armazenamento de medicamentos em temperatura ambiente:", opts: ["2 a 8°C", "15 a 30°C", "30 a 40°C", "Abaixo de 0°C"], c: 1 },
+            { p: "Medicamentos termolábeis (ex: insulina) devem ser guardados em:", opts: ["Prateleira comum", "Gaveta fechada", "Geladeira (2 a 8°C)", "Congelador"], c: 2 },
+            { p: "O sistema PEPS no estoque significa:", opts: ["Primeiro que Entra, Primeiro que Sai", "Produto Especial Para Saúde", "Preço, Estoque, Produto, Saída", "Pegar o Escondido Para Sair"], c: 0 },
+            { p: "O que é 'Mix-up' na indústria/farmácia?", opts: ["Mistura de sucos", "Mistura ou troca acidental de produtos/embalagens", "Promoção de vendas", "Limpeza do chão"], c: 1 },
+            { p: "Em caso de suspeita de intoxicação medicamentosa, deve-se:", opts: ["Provocar vômito imediatamente", "Dar leite", "Procurar médico/pronto-socorro", "Esperar passar"], c: 2 },
+            { p: "O que é Interação Medicamentosa?", opts: ["Conversa entre farmacêuticos", "Alteração do efeito de um remédio por outro", "Compra de dois remédios", "Reação alérgica"], c: 1 },
+            { p: "Antibióticos combatem:", opts: ["Vírus", "Bactérias", "Fungos apenas", "Vermes"], c: 1 },
+            { p: "Para dispensar antibióticos, a receita deve ser:", opts: ["Comum, devolvida ao paciente", "Retida (uma via)", "Verbal", "Em guardanapo"], c: 1 },
+            { p: "O que é Posologia?", opts: ["Estudo das plantas", "Estudo da dosagem e modo de tomar", "Estudo dos venenos", "Estudo das vendas"], c: 1 },
+            { p: "A sigla EPI significa:", opts: ["Equipamento de Proteção Individual", "Estado de Perigo Iminente", "Estoque Para Inventário", "Encontro Para Instrução"], c: 0 },
+            { p: "Qual destes é um EPI comum em farmácia para aplicar injeção?", opts: ["Capacete", "Luvas", "Botas de borracha", "Protetor auricular"], c: 1 },
+            { p: "O que fazer se a receita estiver ilegível?", opts: ["Adivinhar o remédio", "Vender o mais comum", "Não dispensar e pedir confirmação médica", "Perguntar ao cliente o que ele quer"], c: 2 },
+            { p: "Via Otológica refere-se à aplicação no:", opts: ["Olho", "Nariz", "Ouvido", "Boca"], c: 2 },
+            { p: "A automedicação deve ser:", opts: ["Incentivada", "Desencorajada e evitada", "Praticada sempre", "Ignorada"], c: 1 },
+            { p: "O que é Placebo?", opts: ["Remédio forte", "Substância sem efeito farmacológico usada em testes", "Remédio de plantas", "Genérico"], c: 1 },
+            { p: "Medicamentos de 'Tarja Preta' são:", opts: ["Isentos de prescrição", "Sujeitos a controle especial", "Vitaminas", "Fitoterápicos"], c: 1 },
+            { p: "Medicamentos de 'Tarja Vermelha' exigem:", opts: ["Receita médica", "Apenas identidade", "Nada", "Autorização judicial"], c: 0 },
+            { p: "Os MIPs são:", opts: ["Medicamentos Importantes Para Saúde", "Medicamentos Isentos de Prescrição", "Médicos Internos de Plantão", "Materiais Individuais"], c: 1 },
+            { p: "A insulina é administrada geralmente por via:", opts: ["Oral", "Subcutânea", "Retal", "Otológica"], c: 1 },
+            { p: "Qual órgão regula os medicamentos no Brasil?", opts: ["MEC", "ANVISA", "DETRAN", "INMETRO"], c: 1 },
+            { p: "O que é 'Bioequivalência'?", opts: ["Equivalência de preço", "Garantia que o genérico age igual ao referência", "Equivalência de embalagem", "Equivalência de sabor"], c: 1 },
+            { p: "Em relação à higiene pessoal do balconista:", opts: ["Não importa", "Unhas curtas e limpas são essenciais", "Pode usar esmalte descascando", "Jaleco sujo é aceitável"], c: 1 },
+            { p: "O 'Cliente Interno' é:", opts: ["O paciente", "O fornecedor", "O colega de trabalho/colaborador", "O fiscal"], c: 2 },
+            { p: "A via transdérmica utiliza:", opts: ["Xaropes", "Adesivos na pele", "Injeções", "Supositórios"], c: 1 },
+            { p: "O paracetamol pode causar danos a qual órgão se usado em excesso?", opts: ["Pulmão", "Fígado", "Coração", "Ossos"], c: 1 },
+            { p: "Anti-inflamatórios devem ser evitados em caso de:", opts: ["Dor de cabeça", "Dengue (risco de hemorragia)", "Inflamação", "Febre"], c: 1 },
+            { p: "A validade de um medicamento manipulado geralmente é:", opts: ["5 anos", "Indeterminada", "Vinculada ao tempo de tratamento", "1 mês sempre"], c: 2 },
+            { p: "O que é Farmacovigilância?", opts: ["Vigiar os preços", "Monitorar reações adversas e segurança dos medicamentos", "Vigiar os funcionários", "Cuidar da limpeza"], c: 1 },
+            { p: "Forma farmacêutica sólida que se dissolve no intestino (revestida):", opts: ["Xarope", "Comprimido de revestimento entérico", "Pomada", "Solução"], c: 1 },
+            { p: "O que significa 'Uso Tópico'?", opts: ["Ingerir", "Aplicar sobre a pele ou mucosa", "Injetar", "Cheirar"], c: 1 },
+            { p: "Qual a função do 'Lote' na embalagem?", opts: ["Enfeite", "Rastreabilidade em caso de problemas", "Indicar o preço", "Indicar o sabor"], c: 1 },
+            { p: "A dispensação de medicamentos deve garantir:", opts: ["A venda mais cara", "O uso racional e correto", "A rapidez acima de tudo", "A venda de produtos supérfluos"], c: 1 },
+            { p: "O que é um medicamento 'Similar Equivalente'?", opts: ["Falsificado", "Similar que comprovou equivalência à Anvisa", "Genérico", "Importado"], c: 1 },
+            { p: "Qual o telefone nacional para informações sobre intoxicação (Sinitox)?", opts: ["190", "192", "0800 722 6001", "0800 61 1997"], c: 2 },
+            { p: "A postura ética do atendente inclui:", opts: ["Fofocar sobre a doença do cliente", "Manter sigilo e respeito", "Julgar o cliente", "Vender sem receita"], c: 1 },
+            { p: "O descarte de medicamentos vencidos deve ser:", opts: ["No lixo comum", "No vaso sanitário", "Em pontos de coleta específicos", "Queimado no quintal"], c: 2 }
+        ];
+
+        // --- LÓGICA DA APLICAÇÃO ---
+        const app = {
+            state: {
+                currentModule: 0,
+                maxModuleReached: 0,
+                examAttempts: 0,
+                examPassed: false,
+                currentQuizType: null, 
+                currentQuestions: [],
+                score: 0,
+                currentView: 'home'
+            },
+
+            init() {
+                this.loadState();
+                this.renderModuleList();
+                this.navigate('home'); 
+                this.updateUI();
+            },
+
+            loadState() {
+                const saved = localStorage.getItem('farmaciaCursoState');
+                if (saved) {
+                    this.state = { ...this.state, ...JSON.parse(saved) };
+                    this.state.currentView = 'home';
+                }
+            },
+
+            saveState() {
+                localStorage.setItem('farmaciaCursoState', JSON.stringify(this.state));
+                this.updateUI();
+            },
+
+            navigate(viewName) {
+                document.getElementById('view-home').classList.add('hidden');
+                document.getElementById('view-course').classList.add('hidden');
+                
+                document.getElementById('link-home').classList.remove('active');
+                document.getElementById('link-course').classList.remove('active');
+
+                document.getElementById(`view-${viewName}`).classList.remove('hidden');
+                
+                const link = document.getElementById(`link-${viewName}`);
+                if(link) link.classList.add('active');
+
+                if (viewName === 'course') {
+                    document.getElementById('navProgressContainer').classList.remove('hidden');
+                    document.getElementById('navProgressContainer').classList.add('flex');
+                    this.renderCurrentModule();
+                } else {
+                    document.getElementById('navProgressContainer').classList.add('hidden');
+                    document.getElementById('navProgressContainer').classList.remove('flex');
+                }
+                
+                window.scrollTo(0, 0);
+            },
+
+            updateUI() {
+                const percent = Math.round(((this.state.maxModuleReached + 1) / courseContent.length) * 100);
+                const finalPercent = percent > 100 ? 100 : percent;
+                document.getElementById('progressBar').style.width = `${finalPercent}%`;
+                document.getElementById('progressText').innerText = `${finalPercent}%`;
+
+                document.getElementById('btnPrev').disabled = this.state.currentModule === 0;
+                document.getElementById('btnNext').innerText = 
+                    this.state.currentModule === courseContent.length - 1 ? 'Concluir Leitura' : 'Próximo';
+
+                const items = document.querySelectorAll('.module-item');
+                items.forEach((item, idx) => {
+                    if (idx === this.state.currentModule) {
+                        item.classList.add('bg-emerald-50', 'text-emerald-700', 'font-bold', 'border-l-4', 'border-emerald-600');
+                        item.classList.remove('text-gray-600', 'border-transparent');
+                    } else {
+                        item.classList.remove('bg-emerald-50', 'text-emerald-700', 'font-bold', 'border-l-4', 'border-emerald-600');
+                        item.classList.add('text-gray-600', 'border-transparent');
+                    }
+                    
+                    if (idx <= this.state.maxModuleReached) {
+                        const icon = item.querySelector('i');
+                        icon.classList.remove('text-gray-300', 'fa-circle');
+                        icon.classList.add('text-emerald-500', 'fa-check-circle');
+                    }
+                });
+
+                const isFinished = this.state.maxModuleReached >= courseContent.length - 1;
+                if (isFinished && this.state.examPassed) {
+                    document.getElementById('contentViewer').classList.add('hidden');
+                    document.getElementById('certificatePanel').classList.remove('hidden');
+                } else {
+                    if(!this.state.examPassed) {
+                        document.getElementById('certificatePanel').classList.add('hidden');
+                        if(document.getElementById('quizInterface').classList.contains('hidden')) {
+                             document.getElementById('contentViewer').classList.remove('hidden');
+                        }
+                    }
+                }
+                
+                const examBtn = document.getElementById('examLockIcon');
+                if (this.state.maxModuleReached < courseContent.length - 1) {
+                    examBtn.classList.remove('fa-unlock');
+                    examBtn.classList.add('fa-lock');
+                } else {
+                    examBtn.classList.remove('fa-lock');
+                    examBtn.classList.add('fa-unlock');
+                }
+            },
+
+            renderModuleList() {
+                const list = document.getElementById('moduleList');
+                list.innerHTML = courseContent.map((mod, idx) => `
+                    <li onclick="app.goToModule(${idx})" class="module-item cursor-pointer p-3 hover:bg-gray-50 flex items-center transition border-l-4 border-transparent">
+                        <i class="fa-solid fa-circle mr-3 text-gray-300 text-xs"></i>
+                        <span class="truncate">${idx + 1}. ${mod.title}</span>
+                    </li>
+                `).join('');
+            },
+
+            renderCurrentModule() {
+                const mod = courseContent[this.state.currentModule];
+                const viewer = document.getElementById('moduleContent');
+                
+                document.getElementById('moduleTitle').innerText = mod.title;
+                
+                viewer.parentElement.classList.remove('fade-in');
+                void viewer.parentElement.offsetWidth; 
+                viewer.parentElement.classList.add('fade-in');
+
+                viewer.innerHTML = mod.content;
+            },
+
+            nextModule() {
+                if (this.state.currentModule < courseContent.length - 1) {
+                    this.state.currentModule++;
+                    if (this.state.currentModule > this.state.maxModuleReached) {
+                        this.state.maxModuleReached = this.state.currentModule;
+                    }
+                    this.saveState();
+                    this.renderCurrentModule();
+                } else {
+                    if (this.state.maxModuleReached < courseContent.length - 1) {
+                        this.state.maxModuleReached = courseContent.length - 1;
+                    }
+                    this.saveState();
+                    this.showAlert('Leitura Concluída', 'Você finalizou todo o conteúdo teórico. Agora faça o Simulado ou a Prova Oficial!', 'fa-book-reader');
+                }
+            },
+
+            prevModule() {
+                if (this.state.currentModule > 0) {
+                    this.state.currentModule--;
+                    this.saveState();
+                    this.renderCurrentModule();
+                }
+            },
+
+            goToModule(idx) {
+                this.state.currentModule = idx;
+                if (idx > this.state.maxModuleReached) {
+                    this.state.maxModuleReached = idx;
+                }
+                this.saveState();
+                this.renderCurrentModule();
+            },
+
+            shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            },
+
+            startPractice() {
+                this.state.currentQuizType = 'practice';
+                const shuffled = this.shuffleArray([...questionBank]);
+                this.state.currentQuestions = shuffled.slice(0, 15);
+                this.renderQuiz('Simulado de Fixação');
+            },
+
+            checkExamEligibility() {
+                if (this.state.maxModuleReached < courseContent.length - 1) {
+                    this.showAlert('Atenção', 'Você precisa concluir a leitura de todos os módulos antes de fazer a prova.', 'fa-lock');
+                    return;
+                }
+                if (this.state.examPassed) {
+                    this.showAlert('Aprovado', 'Você já foi aprovado nesta prova! Seu certificado já está disponível.', 'fa-check-double');
+                    return;
+                }
+                if (this.state.examAttempts >= 3) {
+                    this.showAlert('Bloqueado', 'Você excedeu o número de 3 tentativas. Entre em contato com a secretaria.', 'fa-ban');
+                    return;
+                }
+                
+                const confirmStart = confirm(`Você tem ${3 - this.state.examAttempts} tentativas restantes. Deseja iniciar a prova oficial?`);
+                if (confirmStart) {
+                    this.startExam();
+                }
+            },
+
+            startExam() {
+                this.state.currentQuizType = 'exam';
+                const shuffled = this.shuffleArray([...questionBank]);
+                this.state.currentQuestions = shuffled.slice(0, 20);
+                this.renderQuiz('Prova Final Oficial');
+            },
+
+            renderQuiz(title) {
+                document.getElementById('contentViewer').classList.add('hidden');
+                document.getElementById('quizInterface').classList.remove('hidden');
+                document.getElementById('certificatePanel').classList.add('hidden');
+                document.getElementById('quizTitle').innerText = title;
+
+                const container = document.getElementById('quizContainer');
+                container.innerHTML = this.state.currentQuestions.map((q, idx) => `
+                    <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition question-block" data-idx="${idx}">
+                        <div class="flex items-start">
+                            <span class="bg-emerald-800 text-white text-xs font-bold px-2 py-1 rounded mr-3 mt-1">#${idx + 1}</span>
+                            <p class="font-bold text-gray-800 mb-4 text-lg flex-1">${q.p}</p>
+                        </div>
+                        <div class="space-y-3 ml-10">
+                            ${q.opts.map((opt, optIdx) => `
+                                <label class="flex items-center space-x-3 p-3 rounded-lg border border-gray-100 cursor-pointer hover:bg-emerald-50 hover:border-emerald-300 transition group">
+                                    <div class="relative flex items-center justify-center w-5 h-5">
+                                        <input type="radio" name="q_${idx}" value="${optIdx}" class="peer appearance-none w-5 h-5 border-2 border-gray-400 rounded-full checked:border-emerald-600 checked:bg-emerald-600 transition-colors">
+                                        <div class="absolute w-2 h-2 bg-white rounded-full opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    </div>
+                                    <span class="text-gray-700 peer-checked:text-emerald-900 peer-checked:font-medium">${opt}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('');
+                
+                window.scrollTo(0,0);
+            },
+
+            closeQuiz() {
+                if (confirm('Deseja sair da avaliação? O progresso desta tentativa será perdido.')) {
+                    document.getElementById('quizInterface').classList.add('hidden');
+                    document.getElementById('contentViewer').classList.remove('hidden');
+                    if(this.state.examPassed) document.getElementById('certificatePanel').classList.remove('hidden');
+                }
+            },
+
+            submitQuiz() {
+                const inputs = document.querySelectorAll('input[type="radio"]:checked');
+                if (inputs.length < this.state.currentQuestions.length) {
+                    this.showAlert('Atenção', 'Por favor, responda todas as perguntas antes de finalizar.', 'fa-exclamation-circle');
+                    return;
+                }
+
+                let hits = 0;
+                this.state.currentQuestions.forEach((q, idx) => {
+                    const selected = parseInt(document.querySelector(`input[name="q_${idx}"]:checked`).value);
+                    const isCorrect = selected === q.c;
+                    if (isCorrect) hits++;
+                });
+
+                const total = this.state.currentQuestions.length;
+                const score = (hits / total) * 10;
+                
+                if (this.state.currentQuizType === 'practice') {
+                    this.showAlert('Resultado do Simulado', `Você acertou ${hits} de ${total} questões.\nNota: ${score.toFixed(1)}`, 'fa-dumbbell');
+                    document.getElementById('quizInterface').classList.add('hidden');
+                    document.getElementById('contentViewer').classList.remove('hidden');
+                } else {
+                    this.state.examAttempts++;
+                    if (score >= 7.0) {
+                        this.state.examPassed = true;
+                        this.state.score = score;
+                        this.saveState();
+                        this.showAlert('APROVADO!', `Parabéns! Sua nota foi ${score.toFixed(1)}. O certificado foi liberado.`, 'fa-trophy');
+                        document.getElementById('quizInterface').classList.add('hidden');
+                        document.getElementById('certificatePanel').classList.remove('hidden');
+                    } else {
+                        const remaining = 3 - this.state.examAttempts;
+                        this.saveState();
+                        if (remaining > 0) {
+                            this.showAlert('Reprovado', `Sua nota foi ${score.toFixed(1)}. Necessário 7.0 para aprovação.\nTentativas restantes: ${remaining}`, 'fa-times-circle');
+                        } else {
+                            this.showAlert('Bloqueado', `Sua nota foi ${score.toFixed(1)}. Você esgotou suas 3 tentativas.`, 'fa-ban');
+                        }
+                        document.getElementById('quizInterface').classList.add('hidden');
+                        document.getElementById('contentViewer').classList.remove('hidden');
+                    }
+                }
+            },
+
+            requestCertificate(e) {
+                e.preventDefault();
+                const name = document.getElementById('certName').value;
+                const cpf = document.getElementById('certCPF').value;
+                const rg = document.getElementById('certRG').value;
+                
+                const text = `*SOLICITAÇÃO DE CERTIFICADO*\n\nCurso: Atendente de Farmácia\nAluno: ${name}\nCPF: ${cpf}\nRG: ${rg}\nNota Final: ${this.state.score.toFixed(1)}\nStatus: APROVADO`;
+                
+                const encoded = encodeURIComponent(text);
+                
+                this.showAlert('Redirecionando', 'Você será redirecionado para o WhatsApp. Envie a mensagem gerada para o Instrutor.', 'fa-whatsapp');
+                setTimeout(() => {
+                     // Instrutor: Substitua o link abaixo pelo seu número se desejar
+                     window.open(`https://wa.me/5561998300711?text=${encoded}`, '_blank');
+                }, 2000);
+            },
+
+            showAlert(title, msg, icon) {
+                document.getElementById('alertTitle').innerText = title;
+                document.getElementById('alertMsg').innerText = msg;
+                document.getElementById('alertIcon').className = `text-5xl mb-6 text-emerald-600 fa-solid ${icon}`;
+                document.getElementById('alertModal').classList.remove('hidden');
+            }
+        };
+
+        // Start
+        app.init();
+    </script>
+</body>
+</html>
