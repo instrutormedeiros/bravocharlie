@@ -1,11 +1,11 @@
 /* sw.js — Service Worker V39 (Styled footer)
    - Cache-then-network strategy
 */
-const CACHE_NAME = 'pbc-static-v70';
+const CACHE_NAME = 'pbc-static-v71';
 const PRECACHE_URLS = [
   '/', 
   '/index.html',
-  '/style.css?v=70',
+  '/style.css?v=71',
   '/app_final.js',
   '/data.js',
   '/quizzes.js',

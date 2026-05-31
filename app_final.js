@@ -260,6 +260,36 @@ document.body.addEventListener('input', (e) => {
             podcast: 'https://youtu.be/acQbeJ4XwTI',
             image: 'https://drive.google.com/file/d/1_G8ckymyPV_G2DL_qu5dkUnSdztvCWHw/view?usp=drive_link',
             pdf: 'https://drive.google.com/file/d/1xLPNu15F74dK6bXXCq4jmsNgXee-ZYVR/view?usp=drive_link'
+        },
+        module6: {
+            video: 'https://youtu.be/4K_NoUO3Y80',
+            podcast: 'https://youtu.be/E_MgCcymCAI',
+            image: 'https://drive.google.com/file/d/1-j5Xu4voMW2jg0aeckpwt_CHGAihEDbX/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1zgI6ZAHa7y65E94A9XW2xclKJBny6inG/view?usp=drive_link'
+        },
+        module7: {
+            video: 'https://youtu.be/oaZt74DtVEM',
+            podcast: 'https://youtu.be/xzoBbbw3MGk',
+            image: 'https://drive.google.com/file/d/1fY1YqOIVgT0zi2tvZW8O0XFUmHIyj43C/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1aDPKA4LnUcMR-1gQ75saLfZZyxewRVsr/view?usp=drive_link'
+        },
+        module8: {
+            video: 'https://youtu.be/WJpDe8SzG3o',
+            podcast: 'https://youtu.be/Und-G2a78uE',
+            image: 'https://drive.google.com/file/d/1Dr-uTYM6EPIvJVvmmB7xHfZxkmAfRGhq/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/11ntvzFOS6Wi9-WehhBrRBHKrr1nt1t0M/view?usp=drive_link'
+        },
+        module9: {
+            video: 'https://youtu.be/Lf_Lr48hZrI',
+            podcast: 'https://youtu.be/_2PB3T_CmLo',
+            image: 'https://drive.google.com/file/d/1HMZsLoAPAAISIZV2r7z5wEG_pulAFudl/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1aWDMhm88eo65WqQvE4-MdZ6nNxM4PTcg/view?usp=drive_link'
+        },
+        module10: {
+            video: 'https://youtu.be/rThvTFTAIe8',
+            podcast: 'https://youtu.be/-x2ykLcVsA0',
+            image: 'https://drive.google.com/file/d/1JsrJBNrRNqsAgeBIjD021ZxLdLjO2SRU/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1_tHedK5ZrHIdMPw7Z0rjxUJFSR6isPC4/view?usp=drive_link'
         }
     };
 
