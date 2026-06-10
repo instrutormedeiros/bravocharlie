@@ -1,17 +1,17 @@
 /* sw.js — Service Worker V39 (Styled footer)
    - Cache-then-network strategy
 */
-const CACHE_NAME = 'pbc-static-v71';
+const CACHE_NAME = 'pbc-static-v94';
 const PRECACHE_URLS = [
   '/', 
   '/index.html',
-  '/style.css?v=71',
-  '/app_final.js',
+  '/style.css?v=94',
+  '/app_final.js?v=94',
   '/data.js',
   '/quizzes.js',
   '/course.js',
-  '/tools_logic.js',
-  '/firebase-init.js'
+  '/tools_logic.js?v=94',
+  '/firebase-init.js?v=94'
 ];
 
 self.addEventListener('install', event => {

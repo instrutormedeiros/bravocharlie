@@ -29,7 +29,7 @@
       }
     </script>
 
-    <link rel="stylesheet" href="style.css?v=71">
+    <link rel="stylesheet" href="style.css?v=94">
     
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -1108,7 +1108,7 @@
                     <p>© 2013-2026 Curso de Formação Profissional. Todos os direitos reservados.</p>
                    <div class="mt-6 flex flex-wrap justify-center items-center gap-4">
                       
-                       <button id="manual-sync-btn" class="text-xs text-blue-400 hover:text-blue-300 underline transition flex items-center">
+                       <button id="manual-sync-btn" class="manual-sync-highlight">
     <i class="fas fa-cloud-upload-alt mr-1"></i> Salvar Progresso
 </button>
 <span class="text-gray-600">|</span> 
@@ -1211,7 +1211,7 @@
                 <button id="login-button" class="w-full py-3.5 px-6 bg-gradient-to-r from-orange-600 via-red-600 to-orange-600 bg-[length:200%_auto] animate-gradient hover:scale-[1.02] text-white font-bold text-base rounded-xl shadow-[0_10px_20px_rgba(234,88,12,0.3)] transition-all transform uppercase tracking-wide">
                     ACESSAR PLATAFORMA <i class="fas fa-arrow-right ml-2"></i>
                 </button>
-<button id="btn-biometric-login" class="w-full mt-4 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-xl flex items-center justify-center border border-gray-600 transition-all group">
+<button id="btn-biometric-login" type="button" class="w-full mt-4 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-xl flex items-center justify-center border border-gray-600 transition-all group">
     <i class="fas fa-fingerprint mr-2 text-orange-500 group-hover:scale-110"></i>
     Entrar com senha salva / Face ID
 </button>
@@ -1244,10 +1244,11 @@
     <div id="name-modal-overlay" class="modal-overlay bg-black/90 backdrop-blur-sm"></div>
 
     <div id="expired-modal" class="modal bg-gray-900 text-white p-0 rounded-2xl shadow-2xl border border-gray-700 w-full max-w-5xl mx-auto overflow-hidden max-h-[90vh] flex flex-col">
-        <div class="bg-gradient-to-r from-gray-900 to-gray-800 p-4 md:p-6 border-b border-gray-700 flex justify-between items-center flex-shrink-0">
+        <div class="payment-modal-header bg-gradient-to-r from-gray-900 to-gray-800 p-4 md:p-6 border-b border-gray-700 flex justify-between items-center flex-shrink-0">
             <div>
                 <h2 class="text-xl md:text-2xl font-bold text-white"><i class="fas fa-crown text-yellow-500 mr-2"></i> Escolha seu Plano</h2>
                 <p id="expired-text-msg" class="text-gray-400 text-xs md:text-sm">Libere acesso ilimitado a todo o conteúdo, vídeos e fotos. Pagamento único, sem cobrança recorrente.</p>
+                <div class="payment-one-shot-badge"><i class="fas fa-circle-check"></i> Investimento único: você escolhe o período e não existe renovação automática.</div>
             </div>
             <button id="close-payment-modal-btn" class="text-gray-400 hover:text-white text-2xl"><i class="fas fa-times"></i></button>
         </div>
@@ -1258,31 +1259,41 @@
                 <div><i class="fas fa-receipt"></i><span>Investimento único</span></div>
                 <div><i class="fab fa-pix"></i><span>PIX ou link</span></div>
             </div>
+            <div class="payment-proof-alert">
+                <i class="fab fa-pix"></i>
+                <div>
+                    <strong>Vai pagar pelo PIX?</strong>
+                    <span>Copie a chave ou use o QR Code. Depois envie o comprovante para mim no WhatsApp para que eu faça a liberação do acesso.</span>
+                </div>
+            </div>
+            <div class="payment-card-option-note">
+                <i class="fas fa-credit-card"></i>
+                <span>Também é possível pagar no cartão ou pelo link de pagamento: clique no botão <strong>Assinar</strong> do plano escolhido.</span>
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="payment-plan-card bg-gray-800 rounded-xl border border-gray-700 hover:border-blue-500 transition-all hover:shadow-xl hover:-translate-y-1 relative overflow-hidden flex flex-col">
                     <div class="p-5 text-center bg-gray-800/50 border-b border-gray-700">
+                        <span class="plan-top-label">Entrada econômica</span>
                         <h3 class="text-xl font-bold text-blue-400">MENSAL</h3>
                         <div class="mt-3"><span class="text-sm text-gray-400">R$</span><span class="text-4xl font-extrabold text-white">29,90</span></div>
                     </div>
                     <div class="p-5 flex-grow flex flex-col items-center">
                         <img src="./assets/img/29,99.jpeg" class="w-32 h-32 object-cover rounded-lg mb-4 border-2 border-blue-500/30" alt="QR Code Mensal">
                         <ul class="text-sm text-gray-300 space-y-2 mb-6 text-left w-full pl-4"><li><i class="fas fa-check text-blue-500 mr-2"></i> Acesso por 30 dias</li><li><i class="fas fa-check text-blue-500 mr-2"></i> Conteúdo Completo</li><li><i class="fas fa-ban text-blue-500 mr-2"></i> Sem renovação automática</li></ul>
-                        <a href="https://pay.infinitepay.io/pixmedeiros/VC1D-7jMqYZwKN-29,99" target="_blank" class="w-full block text-center bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg transition-colors mt-auto">ASSINAR MENSAL</a>
-                        <div class="mt-3 w-full">
-    <div class="flex items-center justify-between bg-black/20 rounded p-2 border border-gray-600">
-        <span class="text-xs font-mono text-gray-300">PIX: 61998300711</span>
-        <button onclick="window.copyPixKey('61998300711')" class="text-xs bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded transition-colors" title="Copiar">
-            <i class="fas fa-copy"></i>
-        </button>
-    </div>
-    <p class="text-[10px] text-gray-500 mt-1 text-center">Celular/Chave</p>
-</div>
+                        <a href="https://pay.infinitepay.io/pixmedeiros/VC1D-7jMqYZwKN-29,99" target="_blank" class="w-full block text-center bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg transition-colors mt-auto"><i class="fas fa-credit-card mr-2"></i> ASSINAR / CARTÃO</a>
+                        <div class="pix-highlight-box">
+                            <span><i class="fab fa-pix"></i> Chave PIX / celular</span>
+                            <strong>61998300711</strong>
+                            <button type="button" onclick="window.copyPixKey('61998300711')"><i class="fas fa-copy"></i> Copiar chave PIX</button>
+                            <small>Após pagar, envie o comprovante para liberação do acesso.</small>
+                        </div>
                     </div>
                 </div>
                 
                 <div class="payment-plan-card featured bg-gray-800 rounded-xl border-2 border-orange-500 shadow-[0_0_20px_rgba(234,88,12,0.15)] transform md:-translate-y-2 relative overflow-hidden flex flex-col">
                     <div class="absolute top-0 right-0 bg-orange-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">MAIS POPULAR</div>
                     <div class="p-5 text-center bg-gradient-to-b from-gray-800 to-gray-700 border-b border-gray-600">
+                        <span class="plan-top-label">Mais escolhido</span>
                         <h3 class="text-xl font-bold text-orange-500">SEMESTRAL</h3>
                         <div class="mt-3"><span class="text-sm text-gray-400">R$</span><span class="text-5xl font-extrabold text-white">49,90</span></div>
                         <p class="text-xs text-orange-300 mt-1">Economia Gigante!</p>
@@ -1290,21 +1301,19 @@
                     <div class="p-5 flex-grow flex flex-col items-center">
                         <img src="./assets/img/49,99.jpeg" class="w-36 h-36 object-cover rounded-lg mb-4 border-2 border-orange-500" alt="QR Code Semestral">
                         <ul class="text-sm text-gray-300 space-y-2 mb-6 text-left w-full pl-4"><li><i class="fas fa-check text-orange-500 mr-2"></i> Acesso por 6 meses</li><li><i class="fas fa-check text-orange-500 mr-2"></i> Vídeos e Fotos Liberados</li><li><i class="fas fa-ban text-orange-500 mr-2"></i> Sem renovação automática</li></ul>
-                        <a href="https://pay.infinitepay.io/pixmedeiros/VC1D-6jVuG1yMV1-49,99" target="_blank" class="w-full block text-center bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-bold py-4 rounded-lg transition-all shadow-lg mt-auto animate-pulse">ASSINAR AGORA</a>
-                        <div class="mt-3 w-full">
-    <div class="flex items-center justify-between bg-black/20 rounded p-2 border border-gray-600">
-        <span class="text-xs font-mono text-gray-300">PIX: 61998300711</span>
-        <button onclick="window.copyPixKey('61998300711')" class="text-xs bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded transition-colors" title="Copiar">
-            <i class="fas fa-copy"></i>
-        </button>
-    </div>
-    <p class="text-[10px] text-gray-500 mt-1 text-center">Celular/Chave</p>
-</div>
+                        <a href="https://pay.infinitepay.io/pixmedeiros/VC1D-6jVuG1yMV1-49,99" target="_blank" class="w-full block text-center bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-bold py-4 rounded-lg transition-all shadow-lg mt-auto animate-pulse"><i class="fas fa-credit-card mr-2"></i> ASSINAR / CARTÃO</a>
+                        <div class="pix-highlight-box featured">
+                            <span><i class="fab fa-pix"></i> Chave PIX / celular</span>
+                            <strong>61998300711</strong>
+                            <button type="button" onclick="window.copyPixKey('61998300711')"><i class="fas fa-copy"></i> Copiar chave PIX</button>
+                            <small>Após pagar, envie o comprovante para liberação do acesso.</small>
+                        </div>
                     </div>
                 </div>
                 
                 <div class="payment-plan-card bg-gray-800 rounded-xl border border-gray-700 hover:border-green-500 transition-all hover:shadow-xl hover:-translate-y-1 relative overflow-hidden flex flex-col">
                     <div class="p-5 text-center bg-gray-800/50 border-b border-gray-700">
+                        <span class="plan-top-label">Melhor prazo</span>
                         <h3 class="text-xl font-bold text-green-400">ANUAL</h3>
                         <div class="mt-3"><span class="text-sm text-gray-400">R$</span><span class="text-4xl font-extrabold text-white">69,90</span></div>
                         <p class="text-xs text-green-300 mt-1">Melhor Custo-Benefício</p>
@@ -1312,21 +1321,19 @@
                     <div class="p-5 flex-grow flex flex-col items-center">
                         <img src="./assets/img/69,99.jpeg" class="w-32 h-32 object-cover rounded-lg mb-4 border-2 border-green-500/30" alt="QR Code Anual">
                         <ul class="text-sm text-gray-300 space-y-2 mb-6 text-left w-full pl-4"><li><i class="fas fa-check text-green-500 mr-2"></i> Acesso por 1 ANO</li><li><i class="fas fa-check text-green-500 mr-2"></i> Todo o Conteúdo</li><li><i class="fas fa-star text-yellow-500 mr-2"></i> Prioridade no Suporte</li><li><i class="fas fa-ban text-green-500 mr-2"></i> Sem renovação automática</li></ul>
-                        <a href="https://pay.infinitepay.io/pixmedeiros/VC1D-6jVuclBoT3-69,99" target="_blank" class="w-full block text-center bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg transition-colors mt-auto">ASSINAR ANUAL</a>
-                        <div class="mt-3 w-full">
-    <div class="flex items-center justify-between bg-black/20 rounded p-2 border border-gray-600">
-        <span class="text-xs font-mono text-gray-300">PIX: 61998300711</span>
-        <button onclick="window.copyPixKey('61998300711')" class="text-xs bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded transition-colors" title="Copiar">
-            <i class="fas fa-copy"></i>
-        </button>
-    </div>
-    <p class="text-[10px] text-gray-500 mt-1 text-center">Celular/Chave</p>
-</div>
+                        <a href="https://pay.infinitepay.io/pixmedeiros/VC1D-6jVuclBoT3-69,99" target="_blank" class="w-full block text-center bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg transition-colors mt-auto"><i class="fas fa-credit-card mr-2"></i> ASSINAR / CARTÃO</a>
+                        <div class="pix-highlight-box">
+                            <span><i class="fab fa-pix"></i> Chave PIX / celular</span>
+                            <strong>61998300711</strong>
+                            <button type="button" onclick="window.copyPixKey('61998300711')"><i class="fas fa-copy"></i> Copiar chave PIX</button>
+                            <small>Após pagar, envie o comprovante para liberação do acesso.</small>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="mt-8 pt-4 border-t border-gray-800 text-center">
-                <p class="text-xs text-gray-500"><i class="fas fa-lock mr-1"></i> Pagamento 100% seguro via InfinitePay ou QRCode. Investimento único, sem assinatura recorrente e sem cobrança automática.</p>
+                <p class="text-xs text-gray-400"><i class="fas fa-lock mr-1"></i> Pagamento 100% seguro via InfinitePay, QR Code ou PIX. Investimento único, sem assinatura recorrente e sem cobrança automática.</p>
+                <p class="payment-proof-footer"><i class="fas fa-paperclip"></i> Importante: envie o comprovante após o pagamento para que a liberação seja feita.</p>
                 <button id="logout-expired-button" class="mt-4 text-xs text-red-400 hover:text-red-300 underline">Sair da Conta</button>
             </div>
         </div>
@@ -1350,30 +1357,46 @@
                 <input type="text" id="manager-search-input" class="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 transition-all" placeholder="Pesquisar aluno na tropa...">
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-white p-4 rounded shadow border-l-4 border-blue-500">
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-4 mb-5">
+                <div class="manager-stat-card bg-white p-4 rounded shadow border-l-4 border-blue-500">
                     <p class="text-xs text-gray-500 uppercase font-bold">Total de Alunos</p>
                     <p class="text-2xl font-bold text-gray-800" id="mgr-total-users">0</p>
                 </div>
-                <div class="bg-white p-4 rounded shadow border-l-4 border-green-500">
+                <div class="manager-stat-card bg-white p-4 rounded shadow border-l-4 border-green-500">
                     <p class="text-xs text-gray-500 uppercase font-bold">Concluídos</p>
                     <p class="text-2xl font-bold text-gray-800" id="mgr-completed">0</p>
                 </div>
-                <div class="bg-white p-4 rounded shadow border-l-4 border-yellow-500">
+                <div class="manager-stat-card bg-white p-4 rounded shadow border-l-4 border-yellow-500">
                     <p class="text-xs text-gray-500 uppercase font-bold">Em Andamento</p>
                     <p class="text-2xl font-bold text-gray-800" id="mgr-progress">0</p>
                 </div>
-                <div class="bg-white p-4 rounded shadow border-l-4 border-red-500">
+                <div class="manager-stat-card bg-white p-4 rounded shadow border-l-4 border-red-500">
                     <p class="text-xs text-gray-500 uppercase font-bold">Pendentes (Início)</p>
                     <p class="text-2xl font-bold text-gray-800" id="mgr-pending">0</p>
                 </div>
+                <div class="manager-stat-card bg-white p-4 rounded shadow border-l-4 border-orange-500">
+                    <p class="text-xs text-gray-500 uppercase font-bold">Parados</p>
+                    <p class="text-2xl font-bold text-gray-800" id="mgr-inactive">0</p>
+                </div>
+                <div class="manager-stat-card bg-white p-4 rounded shadow border-l-4 border-purple-500">
+                    <p class="text-xs text-gray-500 uppercase font-bold">Progresso Médio</p>
+                    <p class="text-2xl font-bold text-gray-800" id="mgr-average">0%</p>
+                </div>
             </div>
-            <div class="flex justify-between items-center mb-4">
+            <div class="flex flex-col xl:flex-row xl:justify-between xl:items-center gap-3 mb-4">
                 <div class="flex items-center gap-2">
                     <i class="fas fa-filter text-gray-400"></i>
                     <select id="mgr-filter-turma" onchange="filterManagerTable()" class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2">
                         <option value="TODOS">Todas as Turmas</option>
                     </select>
+                </div>
+                <div id="manager-quick-filters" class="flex flex-wrap gap-2 text-xs font-bold">
+                    <button type="button" onclick="setManagerQuickFilter('all')" data-manager-filter-btn="all" class="manager-filter-chip active">Todos</button>
+                    <button type="button" onclick="setManagerQuickFilter('inactive')" data-manager-filter-btn="inactive" class="manager-filter-chip">Parados</button>
+                    <button type="button" onclick="setManagerQuickFilter('completed')" data-manager-filter-btn="completed" class="manager-filter-chip">Concluídos</button>
+                    <button type="button" onclick="setManagerQuickFilter('noAccess')" data-manager-filter-btn="noAccess" class="manager-filter-chip">Sem acesso</button>
+                    <button type="button" onclick="setManagerQuickFilter('expired')" data-manager-filter-btn="expired" class="manager-filter-chip">Trial vencido</button>
+                    <button type="button" onclick="setManagerQuickFilter('premium')" data-manager-filter-btn="premium" class="manager-filter-chip">Premium</button>
                 </div>
             </div>
             <div class="bg-white rounded-lg shadow overflow-hidden">
@@ -1385,8 +1408,9 @@
                                 <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Contato</th>
                                 <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Turma</th>
                                 <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Progresso</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Acompanhamento</th>
                                 <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Status</th>
-                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Vencimento</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Ações</th>
                             </tr>
                         </thead>
                         <tbody id="manager-table-body" class="bg-white divide-y divide-gray-200 text-sm">
@@ -1410,21 +1434,24 @@
 
             <div class="mb-6 relative">
                 <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"></i>
-                <input type="text" id="admin-search-input" class="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 transition-all" placeholder="Filtrar por nome, CPF ou e-mail...">
+                <input type="text" id="admin-search-input" class="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 transition-all" placeholder="Filtrar por nome, CPF, telefone, e-mail, status ou turma...">
             </div>
 
             <div class="overflow-x-auto bg-white rounded-lg shadow">
-                 <div id="admin-stats" class="mb-2 text-xs text-gray-600 flex gap-4">
-                    <span>Total: <strong id="admin-total-users">0</strong></span>
-                    <span>Premium: <strong id="admin-total-premium">0</strong></span>
-                    <span>Trial: <strong id="admin-total-trial">0</strong></span>
+                 <div id="admin-stats" class="p-3 text-xs text-gray-600 flex flex-wrap gap-3 border-b border-gray-200 bg-gray-50">
+                    <button type="button" onclick="setAdminQuickFilter('all')" data-admin-filter-btn="all" class="px-2 py-1 rounded-lg bg-white border hover:border-blue-400 hover:text-blue-700 transition-all">Total: <strong id="admin-total-users">0</strong></button>
+                    <button type="button" onclick="setAdminQuickFilter('premium')" data-admin-filter-btn="premium" class="px-2 py-1 rounded-lg bg-green-50 text-green-700 border border-green-100 hover:border-green-400 transition-all">Premium: <strong id="admin-total-premium">0</strong></button>
+                    <button type="button" onclick="setAdminQuickFilter('trial')" data-admin-filter-btn="trial" class="px-2 py-1 rounded-lg bg-yellow-50 text-yellow-700 border border-yellow-100 hover:border-yellow-400 transition-all">Trial: <strong id="admin-total-trial">0</strong></button>
+                    <button type="button" onclick="setAdminQuickFilter('recent')" data-admin-filter-btn="recent" class="px-2 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-100 hover:border-blue-400 transition-all">Últimos criados: <strong id="admin-total-recent">0</strong></button>
+                    <button type="button" onclick="setAdminQuickFilter('expired')" data-admin-filter-btn="expired" class="px-2 py-1 rounded-lg bg-red-50 text-red-700 border border-red-100 hover:border-red-400 transition-all">Expirados: <strong id="admin-total-expired">0</strong></button>
+                    <button type="button" onclick="setAdminQuickFilter('duplicates')" data-admin-filter-btn="duplicates" class="px-2 py-1 rounded-lg bg-orange-50 text-orange-700 border border-orange-100 hover:border-orange-400 transition-all">Possíveis duplicados: <strong id="admin-total-duplicates">0</strong></button>
                 </div>
                 <table class="min-w-full divide-y divide-gray-200" id="admin-users-table">
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email / CPF</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dispositivo</th> <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contato / CPF</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cadastro / Acesso</th> <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vencimento</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                         </tr>
@@ -1466,12 +1493,12 @@
     <div id="achievement-modal" class="modal"><div id="ach-modal-icon-container" class="mb-4"></div><h2 class="text-2xl font-bold mb-2">Conquista!</h2><p id="ach-modal-title" class="mb-6">...</p><button id="close-ach-modal" class="action-button">Continuar</button></div>
     <div id="achievement-modal-overlay" class="modal-overlay"></div>
 
-    <nav class="md:hidden fixed bottom-0 left-0 w-full z-40 bg-white dark:bg-gray-800 shadow-lg border-t dark:border-gray-700">
+    <nav id="bottom-nav" class="md:hidden fixed bottom-0 left-0 w-full z-40 bg-white dark:bg-gray-800 shadow-lg border-t dark:border-gray-700">
         <div class="flex justify-around items-center h-16">
             <button id="bottom-nav-home" class="flex flex-col items-center text-gray-600 dark:text-gray-300"><i class="fas fa-home text-xl"></i><span class="text-[10px]">Início</span></button>
-            <button id="bottom-nav-modules" class="flex flex-col items-center text-gray-600 dark:text-gray-300"><i class="fas fa-list-ul text-xl"></i><span class="text-[10px]">Módulos</span></button>
-            <button id="bottom-nav-focus" class="flex flex-col items-center text-gray-600 dark:text-gray-300"><i class="fas fa-glasses text-xl"></i><span class="text-[10px]">Revisão</span></button>
+            <button id="bottom-nav-modules" class="flex flex-col items-center text-gray-600 dark:text-gray-300"><i class="fas fa-book-open text-xl"></i><span class="text-[10px]">Curso</span></button>
             <button id="bottom-nav-theme" class="flex flex-col items-center text-gray-600 dark:text-gray-300"><i class="fas fa-moon text-xl"></i><span class="text-[10px]">Tema</span></button>
+            <button id="bottom-nav-profile" class="flex flex-col items-center text-gray-600 dark:text-gray-300"><i class="fas fa-user text-xl"></i><span class="text-[10px]">Perfil</span></button>
         </div>
     </nav>
     
@@ -1490,8 +1517,8 @@
     <script src="quizzes.js" defer></script>
     <script src="data.js" defer></script>
     <script src="course.js" defer></script>
-    <script src="tools_logic.js" defer></script> <script src="firebase-init.js" defer></script>
-    <script src="app_final.js" defer></script>
+    <script src="tools_logic.js?v=94" defer></script> <script src="firebase-init.js?v=94" defer></script>
+    <script src="app_final.js?v=94" defer></script>
     <div id="iam-ai-widget" class="iam-ai-widget hidden" aria-live="polite">
         <section id="iam-ai-panel" class="iam-ai-panel" aria-label="IAM - Inteligência Artificial Medeiros">
             <header class="iam-ai-header">

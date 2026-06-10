@@ -1183,5 +1183,762 @@
         list.innerHTML = visible.length ? visible.map(i => `<div class="pro-list-row"><span><strong>${i.title}</strong><small>${u.isAdmin ? `${i.userName || 'Aluno'} - ${i.email || ''}` : 'Enviada'}</small><p>${i.message}</p></span></div>`).join('') : `<div class="pro-empty">${u.isAdmin ? 'Nenhuma sugestão recebida.' : 'Suas sugestões aparecerão aqui.'}</div>`;
     };
 
+    /* === CENTRAL PROFISSIONAL PREMIUM V93 === */
+    function premiumEscape(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function premiumDate(value) {
+        if (!value) return 'Não informado';
+        const date = new Date(`${value}T00:00:00`);
+        return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('pt-BR');
+    }
+
+    function premiumNow() {
+        return new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+    }
+
+    function premiumMoney(value) {
+        return (Number(value) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function premiumStatusByDate(dateValue) {
+        if (!dateValue) return { label: 'Sem validade', tone: 'neutral', days: null };
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const date = new Date(`${dateValue}T00:00:00`);
+        const days = Math.ceil((date - today) / 86400000);
+        if (days < 0) return { label: `Vencido há ${Math.abs(days)} dia(s)`, tone: 'danger', days };
+        if (days <= 30) return { label: `Vence em ${days} dia(s)`, tone: 'warning', days };
+        return { label: `${days} dia(s) restantes`, tone: 'success', days };
+    }
+
+    function premiumMetric(icon, label, value, tone = 'blue') {
+        return `<div class="premium-metric ${tone}"><i class="${icon}"></i><span>${label}</span><strong>${value}</strong></div>`;
+    }
+
+    function premiumDownloadText(id, filename) {
+        const el = document.getElementById(id);
+        const text = el?.value || el?.innerText || '';
+        if (!text.trim()) return ToolsApp.toast('Gere um conteúdo primeiro', 'info');
+        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        link.click();
+        URL.revokeObjectURL(link.href);
+    }
+
+    window.ToolsApp.downloadToolOutput = premiumDownloadText;
+
+    window.ToolsApp.renderProfessionalSuite = function(container) {
+        container.classList.remove('md:grid-cols-2', 'xl:grid-cols-3');
+        container.classList.add('tools-hub-grid');
+        const tools = [
+            ['occurrence', 'Relatório de Ocorrência', 'Gere um RO formal com histórico local.', 'fas fa-file-shield', 'Operacional', 'renderOccurrenceReport'],
+            ['hours', 'Horas Trabalhadas', 'Calcule jornada, intervalo e virada de dia.', 'fas fa-business-time', 'Calculadora', 'renderWorkHours'],
+            ['shift', 'Plantão e Hora Extra', 'Simule extras, adicional e valor final.', 'fas fa-coins', 'Calculadora', 'renderShiftCalculator'],
+            ['review', 'Revisão Inteligente', 'Plano de estudo por tempo e dificuldade.', 'fas fa-brain', 'Estudo', 'renderSmartReview'],
+            ['protocols', 'Protocolos Rápidos', 'Busca de condutas essenciais.', 'fas fa-book-medical', 'Estudo', 'renderProtocolLibrary'],
+            ['documents', 'Central de Documentos', 'Controle validade e pendências.', 'fas fa-folder-open', 'Organização', 'renderDocumentCenter'],
+            ['pro-report', 'Relatório Profissional', 'Transforme rascunho em relatório formal.', 'fas fa-file-signature', 'Operacional', 'renderProfessionalReport'],
+            ['resume', 'Currículo Automático', 'Currículo profissional editável.', 'fas fa-id-badge', 'Carreira', 'renderResumeBuilder'],
+            ['letter', 'Carta de Apresentação', 'Mensagem profissional para vagas.', 'fas fa-envelope-open-text', 'Carreira', 'renderCoverLetter'],
+            ['interview', 'Preparador de Entrevista', 'Treino com respostas-modelo.', 'fas fa-comments', 'Carreira', 'renderInterviewPrep'],
+            ['bio', 'Bio Profissional', 'Bio pronta para WhatsApp e redes.', 'fas fa-user-tie', 'Carreira', 'renderProfessionalBio'],
+            ['portfolio', 'Portfólio Profissional', 'Organize experiências e evidências.', 'fas fa-briefcase', 'Carreira', 'renderPortfolio'],
+            ['certificates', 'Certificados e Validades', 'Alertas de vencimento.', 'fas fa-certificate', 'Organização', 'renderCertificateTracker'],
+            ['posture', 'Mentor de Postura', 'Orientação para situações reais.', 'fas fa-person-rays', 'Carreira', 'renderPostureMentor'],
+            ['card', 'Identidade Profissional', 'Cartão digital com foto local.', 'fas fa-address-card', 'Identidade', 'renderDigitalProfessionalCard'],
+            ['operation', 'Modo Operação', 'Checklist de missão e plantão.', 'fas fa-tower-observation', 'Treino', 'renderOperationMode'],
+            ['crisis', 'Simulador de Crise', 'Decisão sob pressão com feedback.', 'fas fa-triangle-exclamation', 'Treino', 'renderCrisisSimulator'],
+            ['wallet', 'Carteira de Conquistas', 'Resumo visual da evolução.', 'fas fa-medal', 'Identidade', 'renderAchievementWallet'],
+            ['announcements', 'Avisos Importantes', 'Vagas, comunicados e leitura.', 'fas fa-bullhorn', 'Comunicação', 'renderAdminAnnouncements'],
+            ['suggestions', 'Caixa de Sugestões', 'Canal direto com o administrador.', 'fas fa-inbox', 'Comunicação', 'renderSuggestionBox']
+        ];
+        window.professionalToolsCatalog = tools;
+        const groups = [...new Set(tools.map(t => t[4]))];
+        container.innerHTML = `
+            <div class="tools-section-banner premium-tools-banner">
+                <div>
+                    <span><i class="fas fa-gem"></i> Central premium</span>
+                    <h3>Ferramentas para estudar, trabalhar e evoluir</h3>
+                    <p>Use como um painel profissional: gere documentos, controle validades, revise aulas, organize carreira e peça apoio ao IAM quando precisar.</p>
+                </div>
+                <div class="premium-tools-stats">
+                    <strong>${tools.length}</strong>
+                    <small>ferramentas ativas</small>
+                </div>
+            </div>
+            <div class="tools-hub-layout premium-tools-layout">
+                <aside class="tools-catalog-panel">
+                    <div class="tools-catalog-header">
+                        <strong>Central de Ferramentas</strong>
+                        <span>${groups.length} áreas</span>
+                    </div>
+                    <div class="tools-catalog-grid">
+                        ${tools.map(([id, title, desc, icon, tag], index) => `
+                            <button class="tools-catalog-card premium-catalog-card ${index === 0 ? 'active' : ''}" data-tool-id="${id}" onclick="ToolsApp.openProfessionalTool('${id}')">
+                                <i class="${icon}"></i>
+                                <span>${tag}</span>
+                                <strong>${title}</strong>
+                                <small>${desc}</small>
+                            </button>
+                        `).join('')}
+                    </div>
+                </aside>
+                <section class="tools-detail-panel premium-tool-stage">
+                    <div id="professional-tool-detail"></div>
+                </section>
+            </div>
+        `;
+        ToolsApp.openProfessionalTool('occurrence');
+    };
+
+    window.ToolsApp.renderOccurrenceReport = function(c) {
+        c.innerHTML += toolShell('tool-occurrence', 'fas fa-file-shield', 'Relatório de Ocorrência', 'Registro formal, copiável e com histórico salvo neste dispositivo.', `
+            <div class="premium-tool-summary">
+                ${premiumMetric('fas fa-clock', 'Registro', premiumNow(), 'blue')}
+                ${premiumMetric('fas fa-user-shield', 'Responsável', premiumEscape(getUser().name || 'Aluno'), 'green')}
+                ${premiumMetric('fas fa-file-lines', 'Formato', 'RO padrão', 'orange')}
+            </div>
+            <div class="pro-grid">
+                ${input('occ-local', 'Local da ocorrência', 'Empresa, evento, posto ou endereço')}
+                ${input('occ-date', 'Data e hora', '', 'datetime-local')}
+                ${input('occ-type', 'Natureza', 'Mal súbito, princípio de incêndio, queda, apoio...')}
+                ${input('occ-victim', 'Envolvidos', 'Nome, setor, testemunhas ou sem vítima')}
+                ${textarea('occ-desc', 'Descrição objetiva', 'Descreva apenas fatos observados, sem opinião pessoal.', 4)}
+                ${textarea('occ-action', 'Providências adotadas', 'Isolamento, acionamento, atendimento, orientação, encaminhamento...', 4)}
+                ${textarea('occ-follow', 'Encaminhamento final', 'SAMU, responsável local, equipe interna, liberação do local...', 3)}
+            </div>
+            ${actions(`<button class="tool-mini-btn" onclick="ToolsApp.generateOccurrenceReport()"><i class="fas fa-wand-magic-sparkles"></i> Gerar RO</button><button class="tool-mini-btn ghost" onclick="ToolsApp.saveOccurrenceReport()"><i class="fas fa-floppy-disk"></i> Salvar no histórico</button><button class="tool-mini-btn ghost" onclick="ToolsApp.downloadToolOutput('occ-output','relatorio-ocorrencia.txt')"><i class="fas fa-download"></i> Baixar</button>`, 'occ-output')}
+            ${outputArea('occ-output', 10)}
+            <div id="occ-history" class="pro-list"></div>
+        `, 'tool-card-featured');
+        ToolsApp.refreshOccurrenceHistory();
+    };
+
+    window.ToolsApp.generateOccurrenceReport = function() {
+        const u = getUser();
+        const date = toolValue('occ-date') ? new Date(toolValue('occ-date')).toLocaleString('pt-BR') : premiumNow();
+        const text = `RELATÓRIO DE OCORRÊNCIA
+
+Data/Hora: ${date}
+Local: ${toolValue('occ-local') || 'Não informado'}
+Natureza: ${toolValue('occ-type') || 'Não informado'}
+Envolvidos: ${toolValue('occ-victim') || 'Não informado'}
+
+1. DESCRIÇÃO DOS FATOS
+${toolValue('occ-desc') || 'Não informado'}
+
+2. PROVIDÊNCIAS ADOTADAS
+${toolValue('occ-action') || 'Não informado'}
+
+3. ENCAMINHAMENTO FINAL
+${toolValue('occ-follow') || 'Não informado'}
+
+Responsável pelo registro: ${u.name || 'Aluno/Profissional'}
+Contato: ${u.phone || u.email || 'Não informado'}`;
+        setToolOutput('occ-output', text);
+    };
+
+    window.ToolsApp.saveOccurrenceReport = function() {
+        const text = document.getElementById('occ-output')?.value || '';
+        if (!text.trim()) ToolsApp.generateOccurrenceReport();
+        const items = toolStore.get('tool_occurrences_v93', []);
+        items.unshift({ id: Date.now(), title: toolValue('occ-type') || 'Ocorrência', local: toolValue('occ-local') || 'Sem local', createdAt: new Date().toISOString(), text: document.getElementById('occ-output')?.value || '' });
+        toolStore.set('tool_occurrences_v93', items.slice(0, 8));
+        ToolsApp.toast('Relatório salvo no histórico');
+        ToolsApp.refreshOccurrenceHistory();
+    };
+
+    window.ToolsApp.refreshOccurrenceHistory = function() {
+        listTool('tool_occurrences_v93', 'occ-history', 'Nenhum relatório salvo neste dispositivo.', i => `
+            <div class="pro-list-row premium-list-row">
+                <span><strong>${premiumEscape(i.title)}</strong><small>${premiumEscape(i.local)} • ${new Date(i.createdAt).toLocaleString('pt-BR')}</small></span>
+                <button onclick="ToolsApp.openOccurrenceHistory(${i.id})"><i class="fas fa-eye"></i></button>
+            </div>`);
+    };
+
+    window.ToolsApp.openOccurrenceHistory = function(id) {
+        const item = toolStore.get('tool_occurrences_v93', []).find(x => x.id === id);
+        if (item) setToolOutput('occ-output', item.text || '');
+    };
+
+    window.ToolsApp.renderWorkHours = function(c) {
+        c.innerHTML += toolShell('tool-hours', 'fas fa-business-time', 'Calculadora de Horas Trabalhadas', 'Calcula jornada comum ou plantão virando o dia, descontando intervalo.', `
+            <div class="pro-grid">
+                ${input('hours-in', 'Entrada', '', 'time')}
+                ${input('hours-out', 'Saída', '', 'time')}
+                ${input('hours-break', 'Intervalo total em minutos', '60', 'number')}
+                ${input('hours-goal', 'Jornada prevista em horas', '8', 'number')}
+            </div>
+            ${actions(`<button class="tool-mini-btn" onclick="ToolsApp.calculateWorkHours()"><i class="fas fa-calculator"></i> Calcular jornada</button>`)}
+            <div id="hours-output" class="premium-result-card">Informe entrada e saída para calcular.</div>
+        `);
+    };
+
+    window.ToolsApp.calculateWorkHours = function() {
+        const start = timeToMinutes(toolValue('hours-in'));
+        const end = timeToMinutes(toolValue('hours-out'));
+        if (start === null || end === null) {
+            document.getElementById('hours-output').innerHTML = 'Preencha entrada e saída.';
+            return;
+        }
+        const total = Math.max(diffMinutes(start, end) - (parseInt(toolValue('hours-break')) || 0), 0);
+        const goal = (parseFloat(toolValue('hours-goal')) || 8) * 60;
+        const balance = total - goal;
+        document.getElementById('hours-output').innerHTML = `
+            <div class="premium-tool-summary">
+                ${premiumMetric('fas fa-clock', 'Trabalhado', minutesLabel(total), 'blue')}
+                ${premiumMetric('fas fa-bullseye', 'Previsto', minutesLabel(goal), 'green')}
+                ${premiumMetric(balance >= 0 ? 'fas fa-arrow-trend-up' : 'fas fa-arrow-trend-down', balance >= 0 ? 'Extra' : 'Saldo negativo', minutesLabel(Math.abs(balance)), balance >= 0 ? 'orange' : 'red')}
+            </div>`;
+    };
+
+    window.ToolsApp.renderShiftCalculator = function(c) {
+        c.innerHTML += toolShell('tool-shift-extra', 'fas fa-coins', 'Calculadora de Plantão e Hora Extra', 'Calcula hora extra, adicional noturno e estimativa de pagamento.', `
+            <div class="pro-grid">
+                ${input('extra-hours', 'Horas trabalhadas', '12', 'number')}
+                ${input('extra-base', 'Jornada prevista', '8', 'number')}
+                ${input('extra-rate', 'Valor da hora normal', '15', 'number')}
+                ${input('extra-percent', 'Adicional de hora extra (%)', '50', 'number')}
+                ${input('extra-night', 'Horas noturnas', '0', 'number')}
+                ${input('extra-night-percent', 'Adicional noturno (%)', '20', 'number')}
+            </div>
+            ${actions(`<button class="tool-mini-btn" onclick="ToolsApp.calculateExtraHours()"><i class="fas fa-calculator"></i> Calcular pagamento</button>`)}
+            <div id="extra-output" class="premium-result-card">Resultado da simulação.</div>
+        `);
+    };
+
+    window.ToolsApp.calculateExtraHours = function() {
+        const hours = parseFloat(toolValue('extra-hours')) || 0;
+        const base = parseFloat(toolValue('extra-base')) || 0;
+        const rate = parseFloat(toolValue('extra-rate')) || 0;
+        const percent = parseFloat(toolValue('extra-percent')) || 0;
+        const night = parseFloat(toolValue('extra-night')) || 0;
+        const nightPercent = parseFloat(toolValue('extra-night-percent')) || 0;
+        const extra = Math.max(hours - base, 0);
+        const normalValue = Math.min(hours, base) * rate;
+        const extraValue = extra * rate * (1 + percent / 100);
+        const nightValue = night * rate * (nightPercent / 100);
+        document.getElementById('extra-output').innerHTML = `
+            <div class="premium-tool-summary">
+                ${premiumMetric('fas fa-hourglass-half', 'Horas extras', `${extra.toFixed(1)}h`, 'orange')}
+                ${premiumMetric('fas fa-moon', 'Adic. noturno', premiumMoney(nightValue), 'blue')}
+                ${premiumMetric('fas fa-sack-dollar', 'Total estimado', premiumMoney(normalValue + extraValue + nightValue), 'green')}
+            </div>
+            <small class="premium-note">Estimativa simples. Confirme convenção, escala e regras da empresa antes de usar como valor oficial.</small>`;
+    };
+
+    window.ToolsApp.renderSmartReview = function(c) {
+        c.innerHTML += toolShell('tool-review', 'fas fa-brain', 'Modo Revisão Inteligente', 'Cria uma sessão de revisão com foco, tempo, exercício e retorno ao IAM.', `
+            <div class="pro-grid">
+                ${input('review-topic', 'Tema da revisão', 'APH, incêndio, legislação, salvamento...')}
+                ${input('review-min', 'Minutos disponíveis', '25', 'number')}
+                <label class="pro-field"><span>Dificuldade percebida</span><select id="review-difficulty"><option>Alta</option><option>Média</option><option>Baixa</option></select></label>
+                <label class="pro-field"><span>Objetivo</span><select id="review-goal"><option>Fixar conteúdo</option><option>Preparar simulado</option><option>Revisar erros</option><option>Voltar à rotina</option></select></label>
+            </div>
+            ${actions(`<button class="tool-mini-btn" onclick="ToolsApp.generateReviewPlan()"><i class="fas fa-bolt"></i> Criar plano</button>`, 'review-output')}
+            ${outputArea('review-output', 8)}
+        `);
+    };
+
+    window.ToolsApp.generateReviewPlan = function() {
+        const min = Math.max(parseInt(toolValue('review-min')) || 25, 10);
+        const topic = toolValue('review-topic') || 'Tema escolhido';
+        const difficulty = toolValue('review-difficulty') || 'Média';
+        const goal = toolValue('review-goal') || 'Fixar conteúdo';
+        setToolOutput('review-output', `PLANO DE REVISÃO INTELIGENTE
+
+Tema: ${topic}
+Objetivo: ${goal}
+Dificuldade: ${difficulty}
+Tempo total: ${min} minutos
+
+1. Aquecimento (${Math.ceil(min * 0.15)} min)
+Leia os títulos, palavras-chave e anote o que você lembra sem consultar.
+
+2. Revisão ativa (${Math.ceil(min * 0.35)} min)
+Explique o conteúdo em voz alta como se estivesse ensinando outro aluno.
+
+3. Fixação (${Math.ceil(min * 0.30)} min)
+Responda exercícios do tema e marque os erros.
+
+4. Fechamento (${Math.max(3, Math.floor(min * 0.20))} min)
+Escreva 3 pontos que precisa reforçar e peça ao IAM um resumo direcionado.`);
+    };
+
+    window.ToolsApp.renderProtocolLibrary = function(c) {
+        window.premiumProtocols = [
+            ['APH - XABCDE', 'APH', 'Controlar hemorragia grave, avaliar vias aéreas, respiração, circulação, neurológico, exposição e segurança da cena.'],
+            ['Princípio de incêndio', 'Incêndio', 'Avaliar risco, acionar apoio, manter rota de fuga, escolher extintor correto e não se expor sem necessidade.'],
+            ['Abandono de área', 'Evacuação', 'Orientar calma, fluxo contínuo, rota segura, ponto de encontro e conferência de pessoas.'],
+            ['Espaço confinado', 'NR33', 'Não entrar sem autorização, monitoramento atmosférico, ventilação, vigia, comunicação e plano de resgate.'],
+            ['Trabalho em altura', 'NR35', 'Inspecionar ancoragem, talabarte, capacete jugular, isolamento inferior e plano de emergência.'],
+            ['Comunicação operacional', 'Postura', 'Mensagem curta: local, ocorrência, riscos, vítimas, apoio necessário e responsável no local.'],
+            ['Ameaça e tumulto', 'Segurança', 'Preservar distância, chamar apoio, retirar curiosos, manter tom firme e registrar informações essenciais.'],
+            ['Mal súbito', 'APH', 'Avaliar responsividade, acionar emergência, monitorar sinais, manter conforto e registrar evolução até chegada do suporte.']
+        ];
+        c.innerHTML += toolShell('tool-protocols', 'fas fa-book-medical', 'Biblioteca de Protocolos Rápidos', 'Pesquise condutas em segundos. Ideal para revisar antes de plantão ou simulado.', `
+            <div class="pro-grid">
+                ${input('protocol-search', 'Buscar protocolo', 'Ex: APH, incêndio, evacuação, NR35')}
+                <label class="pro-field"><span>Categoria</span><select id="protocol-category"><option value="">Todas</option><option>APH</option><option>Incêndio</option><option>Evacuação</option><option>NR33</option><option>NR35</option><option>Postura</option><option>Segurança</option></select></label>
+            </div>
+            ${actions(`<button class="tool-mini-btn" onclick="ToolsApp.filterProtocols()"><i class="fas fa-search"></i> Consultar</button>`)}
+            <div id="protocol-list" class="premium-protocol-list"></div>
+        `);
+        ToolsApp.filterProtocols();
+    };
+
+    window.ToolsApp.filterProtocols = function() {
+        const q = (toolValue('protocol-search') || '').toLowerCase();
+        const cat = toolValue('protocol-category');
+        const items = (window.premiumProtocols || []).filter(([title, category, text]) => (!cat || category === cat) && `${title} ${category} ${text}`.toLowerCase().includes(q));
+        document.getElementById('protocol-list').innerHTML = items.length ? items.map(([title, category, text]) => `
+            <article class="premium-protocol-card">
+                <span>${premiumEscape(category)}</span>
+                <strong>${premiumEscape(title)}</strong>
+                <p>${premiumEscape(text)}</p>
+            </article>`).join('') : '<div class="pro-empty">Nenhum protocolo encontrado.</div>';
+    };
+
+    window.ToolsApp.renderDocumentCenter = function(c) {
+        c.innerHTML += toolShell('tool-documents', 'fas fa-folder-open', 'Central de Documentos', 'Controle documentos pessoais, vencimentos e pendências para estágio, trabalho ou curso.', `
+            <div class="pro-grid">
+                ${input('doc-name', 'Documento', 'CNH, ASO, certificado, comprovante...')}
+                ${input('doc-date', 'Validade', '', 'date')}
+                <label class="pro-field"><span>Status</span><select id="doc-status"><option>Em dia</option><option>Pendente</option><option>Enviar para empresa</option><option>Renovar</option></select></label>
+                ${input('doc-note', 'Observação', 'Onde está salvo ou o que falta')}
+            </div>
+            ${actions(`<button class="tool-mini-btn" onclick="ToolsApp.addDocumentItem()"><i class="fas fa-plus"></i> Adicionar documento</button>`)}
+            <div id="doc-list" class="pro-list"></div>
+        `);
+        ToolsApp.refreshDocuments();
+    };
+
+    window.ToolsApp.addDocumentItem = function() {
+        const name = toolValue('doc-name');
+        if (!name) return ToolsApp.toast('Informe o documento', 'info');
+        const items = toolStore.get('tool_documents_v93', []);
+        items.unshift({ id: Date.now(), name, date: toolValue('doc-date'), status: toolValue('doc-status'), note: toolValue('doc-note') });
+        toolStore.set('tool_documents_v93', items);
+        ['doc-name', 'doc-date', 'doc-note'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        ToolsApp.refreshDocuments();
+    };
+
+    window.ToolsApp.removeDocumentItem = function(id) {
+        toolStore.set('tool_documents_v93', toolStore.get('tool_documents_v93', []).filter(i => i.id !== id));
+        ToolsApp.refreshDocuments();
+    };
+
+    window.ToolsApp.refreshDocuments = function() {
+        listTool('tool_documents_v93', 'doc-list', 'Nenhum documento cadastrado.', i => {
+            const st = premiumStatusByDate(i.date);
+            return `<div class="pro-list-row premium-list-row">
+                <span><strong>${premiumEscape(i.name)}</strong><small>${premiumEscape(i.status || 'Em dia')} • ${premiumDate(i.date)} • ${st.label}${i.note ? ` • ${premiumEscape(i.note)}` : ''}</small></span>
+                <em class="premium-pill ${st.tone}">${st.tone === 'danger' ? 'Atenção' : st.tone === 'warning' ? 'Próximo' : 'Ok'}</em>
+                <button onclick="ToolsApp.removeDocumentItem(${i.id})"><i class="fas fa-times"></i></button>
+            </div>`;
+        });
+    };
+
+    window.ToolsApp.renderProfessionalReport = function(c) {
+        c.innerHTML += toolShell('tool-pro-report', 'fas fa-file-signature', 'Gerador de Relatório Profissional', 'Transforma anotações soltas em relatório claro, respeitoso e profissional.', `
+            <div class="pro-grid">
+                ${input('prorep-title', 'Título do relatório', 'Relatório de atividade / atendimento / vistoria')}
+                ${input('prorep-place', 'Local', 'Onde ocorreu')}
+                ${textarea('prorep-notes', 'Anotações brutas', 'Cole ou escreva as informações principais...', 6)}
+            </div>
+            ${actions(`<button class="tool-mini-btn" onclick="ToolsApp.generateProfessionalReport()"><i class="fas fa-wand-magic-sparkles"></i> Organizar texto</button><button class="tool-mini-btn ghost" onclick="ToolsApp.downloadToolOutput('prorep-output','relatorio-profissional.txt')"><i class="fas fa-download"></i> Baixar</button>`, 'prorep-output')}
+            ${outputArea('prorep-output', 10)}
+        `);
+    };
+
+    window.ToolsApp.generateProfessionalReport = function() {
+        setToolOutput('prorep-output', `${toolValue('prorep-title') || 'RELATÓRIO PROFISSIONAL'}
+
+Data do registro: ${premiumNow()}
+Local: ${toolValue('prorep-place') || 'Não informado'}
+Responsável: ${getUser().name || 'Aluno/Profissional'}
+
+Resumo:
+${toolValue('prorep-notes') || 'Descreva as informações para gerar o relatório.'}
+
+Encaminhamento:
+As informações foram registradas de forma objetiva para controle, acompanhamento e comunicação aos responsáveis. Recomenda-se arquivar este registro junto aos demais documentos da ocorrência/atividade.`);
+    };
+
+    window.ToolsApp.renderResumeBuilder = function(c) {
+        const u = getUser();
+        c.innerHTML += toolShell('tool-resume', 'fas fa-id-badge', 'Currículo Profissional Automático', 'Monte uma base limpa para enviar por WhatsApp, e-mail ou adaptar em PDF.', `
+            <div class="pro-grid">
+                ${input('cv-role', 'Objetivo', 'Bombeiro Civil / Brigadista / Segurança')}
+                ${input('cv-city', 'Cidade/UF', 'Brasília/DF')}
+                ${textarea('cv-exp', 'Experiências ou vivências', 'Eventos, estágios, atendimento ao público, liderança, curso...', 4)}
+                ${textarea('cv-skills', 'Habilidades principais', 'APH, prevenção, comunicação, disciplina, trabalho em equipe...', 4)}
+            </div>
+            ${actions(`<button class="tool-mini-btn" onclick="ToolsApp.generateResume()"><i class="fas fa-file-lines"></i> Gerar currículo</button><button class="tool-mini-btn ghost" onclick="ToolsApp.downloadToolOutput('cv-output','curriculo-bravo-charlie.txt')"><i class="fas fa-download"></i> Baixar</button>`, 'cv-output')}
+            ${outputArea('cv-output', 11)}
+            <small class="premium-note">Dados usados: ${premiumEscape(u.name || 'nome não informado')} • ${premiumEscape(u.email || 'e-mail não informado')}</small>
+        `);
+    };
+
+    window.ToolsApp.generateResume = function() {
+        const u = getUser();
+        setToolOutput('cv-output', `${u.name || 'Nome completo'}
+${u.email || 'E-mail'}${u.phone ? ` | ${u.phone}` : ''}
+${toolValue('cv-city') || 'Cidade/UF'}
+
+OBJETIVO
+${toolValue('cv-role') || 'Atuação profissional na área operacional.'}
+
+RESUMO PROFISSIONAL
+Profissional em formação pela plataforma Projeto Bravo Charlie, com foco em segurança, prevenção, disciplina operacional, atendimento responsável e postura profissional.
+
+FORMAÇÃO
+Curso de Formação - Projeto Bravo Charlie
+
+EXPERIÊNCIAS / VIVÊNCIAS
+${toolValue('cv-exp') || 'Inclua experiências, eventos, estágios, atividades voluntárias ou práticas.'}
+
+HABILIDADES
+${toolValue('cv-skills') || 'Inclua suas principais habilidades técnicas e comportamentais.'}`);
+    };
+
+    window.ToolsApp.renderCoverLetter = function(c) {
+        c.innerHTML += toolShell('tool-letter', 'fas fa-envelope-open-text', 'Gerador de Carta de Apresentação', 'Crie uma mensagem elegante para vaga, indicação ou primeiro contato.', `
+            <div class="pro-grid">
+                ${input('letter-company', 'Empresa ou recrutador', 'Nome da empresa')}
+                ${input('letter-role', 'Vaga desejada', 'Bombeiro Civil')}
+                ${input('letter-strength', 'Seu principal diferencial', 'Disciplina, postura e vontade de crescer')}
+                ${textarea('letter-availability', 'Disponibilidade', 'Escala, horários, região ou início imediato...', 3)}
+            </div>
+            ${actions(`<button class="tool-mini-btn" onclick="ToolsApp.generateCoverLetter()"><i class="fas fa-paper-plane"></i> Gerar carta</button>`, 'letter-output')}
+            ${outputArea('letter-output', 8)}
+        `);
+    };
+
+    window.ToolsApp.generateCoverLetter = function() {
+        const u = getUser();
+        setToolOutput('letter-output', `Olá, ${toolValue('letter-company') || 'equipe de recrutamento'}.
+
+Meu nome é ${u.name || '...'} e tenho interesse na oportunidade de ${toolValue('letter-role') || 'atuação profissional'}.
+
+Venho me preparando pela formação Bravo Charlie e busco uma oportunidade para aplicar com responsabilidade meus conhecimentos, mantendo postura profissional, segurança e boa comunicação.
+
+Meu principal diferencial é: ${toolValue('letter-strength') || 'comprometimento e vontade de crescer'}.
+
+Disponibilidade: ${toolValue('letter-availability') || 'a combinar'}.
+
+Fico à disposição para entrevista e envio dos documentos necessários.
+
+Atenciosamente,
+${u.name || ''}`);
+    };
+
+    window.ToolsApp.renderInterviewPrep = function(c) {
+        c.innerHTML += toolShell('tool-interview', 'fas fa-comments', 'Preparador de Entrevista', 'Treine respostas com estrutura profissional e mais confiança.', `
+            <div class="pro-grid">
+                ${input('interview-role', 'Vaga alvo', 'Bombeiro Civil')}
+                ${input('interview-company', 'Empresa', 'Nome da empresa')}
+            </div>
+            ${actions(`<button class="tool-mini-btn" onclick="ToolsApp.generateInterviewPrep()"><i class="fas fa-comments"></i> Montar treino</button>`, 'interview-output')}
+            ${outputArea('interview-output', 12)}
+        `);
+    };
+
+    window.ToolsApp.generateInterviewPrep = function() {
+        const role = toolValue('interview-role') || 'vaga';
+        const company = toolValue('interview-company') || 'empresa';
+        setToolOutput('interview-output', `TREINO DE ENTREVISTA - ${role}
+
+1. Fale sobre você.
+Modelo: "Sou uma pessoa comprometida, em formação pela Bravo Charlie, e busco aplicar meus conhecimentos com disciplina, segurança e boa comunicação."
+
+2. Por que quer trabalhar na ${company}?
+Modelo: "Porque vejo uma oportunidade de crescer em um ambiente onde posso contribuir com postura, prevenção e responsabilidade."
+
+3. Como você age sob pressão?
+Modelo: "Procuro respirar, entender a prioridade, comunicar com clareza e seguir procedimento."
+
+4. Qual seu ponto forte?
+Escolha um: pontualidade, disciplina, comunicação, calma, organização ou atenção aos detalhes.
+
+5. Pergunta para fazer no final:
+"Quais são as principais expectativas para quem assumir essa função nos primeiros 30 dias?"`);
+    };
+
+    window.ToolsApp.renderProfessionalBio = function(c) {
+        c.innerHTML += toolShell('tool-bio', 'fas fa-user-tie', 'Gerador de Bio Profissional', 'Bio curta, média e forte para WhatsApp, Instagram ou currículo.', `
+            <div class="pro-grid">
+                ${input('bio-role', 'Área de atuação', 'Bombeiro Civil / Brigadista')}
+                ${input('bio-tone', 'Estilo', 'Profissional, direto e confiante')}
+                ${input('bio-city', 'Cidade', 'Brasília/DF')}
+            </div>
+            ${actions(`<button class="tool-mini-btn" onclick="ToolsApp.generateBio()"><i class="fas fa-wand-magic-sparkles"></i> Gerar bio</button>`, 'bio-output')}
+            ${outputArea('bio-output', 7)}
+        `);
+    };
+
+    window.ToolsApp.generateBio = function() {
+        const name = getUser().name || 'Profissional';
+        const role = toolValue('bio-role') || 'Área operacional';
+        const city = toolValue('bio-city') || '';
+        setToolOutput('bio-output', `BIO CURTA
+${name} | ${role}
+
+BIO PROFISSIONAL
+${name} - ${role}${city ? ` em ${city}` : ''}. Foco em prevenção, segurança, disciplina operacional e atendimento responsável.
+
+BIO PARA WHATSAPP
+Olá, sou ${name}. Atuo/estou em formação na área de ${role}, com foco em postura profissional, segurança e evolução contínua.`);
+    };
+
+    window.ToolsApp.renderPortfolio = function(c) {
+        c.innerHTML += toolShell('tool-portfolio', 'fas fa-briefcase', 'Portfólio Profissional', 'Registre experiências, cursos, eventos e evidências de evolução.', `
+            <div class="pro-grid">
+                ${input('portfolio-title', 'Registro', 'Curso, evento, ocorrência, estágio, experiência...')}
+                ${input('portfolio-date', 'Data', '', 'date')}
+                <label class="pro-field"><span>Tipo</span><select id="portfolio-type"><option>Curso</option><option>Evento</option><option>Experiência</option><option>Certificado</option><option>Voluntariado</option></select></label>
+                ${input('portfolio-note', 'Resultado ou evidência', 'O que aprendeu, onde atuou ou o que comprovou')}
+            </div>
+            ${actions(`<button class="tool-mini-btn" onclick="ToolsApp.addPortfolioItem()"><i class="fas fa-plus"></i> Adicionar ao portfólio</button>`)}
+            <div id="portfolio-list" class="pro-list"></div>
+        `);
+        ToolsApp.refreshPortfolio();
+    };
+
+    window.ToolsApp.addPortfolioItem = function() {
+        const title = toolValue('portfolio-title');
+        if (!title) return ToolsApp.toast('Informe o registro', 'info');
+        const items = toolStore.get('tool_portfolio_v93', []);
+        items.unshift({ id: Date.now(), title, date: toolValue('portfolio-date'), type: toolValue('portfolio-type'), note: toolValue('portfolio-note') });
+        toolStore.set('tool_portfolio_v93', items);
+        ['portfolio-title', 'portfolio-date', 'portfolio-note'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        ToolsApp.refreshPortfolio();
+    };
+
+    window.ToolsApp.refreshPortfolio = function() {
+        listTool('tool_portfolio_v93', 'portfolio-list', 'Nenhum item no portfólio.', i => `<div class="pro-list-row premium-list-row"><span><strong>${premiumEscape(i.title)}</strong><small>${premiumEscape(i.type || 'Registro')} • ${premiumDate(i.date)}${i.note ? ` • ${premiumEscape(i.note)}` : ''}</small></span><button onclick="ToolsApp.removePortfolioItem(${i.id})"><i class="fas fa-times"></i></button></div>`);
+    };
+
+    window.ToolsApp.removePortfolioItem = function(id) {
+        toolStore.set('tool_portfolio_v93', toolStore.get('tool_portfolio_v93', []).filter(i => i.id !== id));
+        ToolsApp.refreshPortfolio();
+    };
+
+    window.ToolsApp.renderCertificateTracker = function(c) {
+        c.innerHTML += toolShell('tool-certificates', 'fas fa-certificate', 'Controle de Certificados e Validades', 'Controle reciclagens, certificados e documentos que vencem.', `
+            <div class="pro-grid">
+                ${input('cert-name', 'Certificado', 'Bombeiro Civil, NR35, NR33, APH...')}
+                ${input('cert-date', 'Validade', '', 'date')}
+                ${input('cert-issuer', 'Emissor', 'Instituição ou empresa')}
+                ${input('cert-note', 'Observação', 'Número, link ou local onde está salvo')}
+            </div>
+            ${actions(`<button class="tool-mini-btn" onclick="ToolsApp.addCertificateItem()"><i class="fas fa-plus"></i> Adicionar certificado</button>`)}
+            <div id="cert-list" class="pro-list"></div>
+        `);
+        ToolsApp.refreshCertificates();
+    };
+
+    window.ToolsApp.addCertificateItem = function() {
+        const name = toolValue('cert-name');
+        if (!name) return ToolsApp.toast('Informe o certificado', 'info');
+        const items = toolStore.get('tool_certificates_v93', []);
+        items.unshift({ id: Date.now(), name, date: toolValue('cert-date'), issuer: toolValue('cert-issuer'), note: toolValue('cert-note') });
+        toolStore.set('tool_certificates_v93', items);
+        ['cert-name', 'cert-date', 'cert-issuer', 'cert-note'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        ToolsApp.refreshCertificates();
+    };
+
+    window.ToolsApp.refreshCertificates = function() {
+        listTool('tool_certificates_v93', 'cert-list', 'Nenhum certificado cadastrado.', i => {
+            const st = premiumStatusByDate(i.date);
+            return `<div class="pro-list-row premium-list-row">
+                <span><strong>${premiumEscape(i.name)}</strong><small>${premiumEscape(i.issuer || 'Sem emissor')} • ${premiumDate(i.date)} • ${premiumEscape(st.label)}${i.note ? ` • ${premiumEscape(i.note)}` : ''}</small></span>
+                <em class="premium-pill ${st.tone}">${st.tone === 'danger' ? 'Vencido' : st.tone === 'warning' ? 'Atenção' : 'Em dia'}</em>
+                <button onclick="ToolsApp.removeCertificateItem(${i.id})"><i class="fas fa-times"></i></button>
+            </div>`;
+        });
+    };
+
+    window.ToolsApp.removeCertificateItem = function(id) {
+        toolStore.set('tool_certificates_v93', toolStore.get('tool_certificates_v93', []).filter(i => i.id !== id));
+        ToolsApp.refreshCertificates();
+    };
+
+    window.ToolsApp.renderPostureMentor = function(c) {
+        const scenarios = [
+            ['Primeiro plantão', 'Chegue antes, observe a rotina, pergunte o necessário e registre tudo. O profissional novo se destaca por humildade, atenção e pontualidade.'],
+            ['Conflito com aluno/cliente', 'Baixe o tom, aumente a clareza, mantenha distância segura e chame apoio se houver risco. Não discuta para vencer, comunique para resolver.'],
+            ['Erro cometido', 'Assuma com honestidade, corrija rápido, registre se necessário e peça orientação. Postura profissional aparece principalmente quando algo sai errado.'],
+            ['Entrevista', 'Fale com objetividade: formação, disponibilidade, postura e vontade de crescer. Evite inventar experiência que ainda não possui.'],
+            ['Rede social', 'Publique evolução, estudo e conquistas. Evite exposição indevida de ocorrências, pacientes, locais sensíveis ou informações internas.']
+        ];
+        window.premiumPostureScenarios = scenarios;
+        c.innerHTML += toolShell('tool-posture', 'fas fa-person-rays', 'Mentor de Postura Profissional', 'Escolha uma situação e receba orientação prática.', `
+            <div class="pro-grid">
+                <label class="pro-field"><span>Situação</span><select id="posture-scenario">${scenarios.map(([title]) => `<option>${premiumEscape(title)}</option>`).join('')}</select></label>
+            </div>
+            ${actions(`<button class="tool-mini-btn" onclick="ToolsApp.nextPostureTip()"><i class="fas fa-compass"></i> Orientar postura</button>`)}
+            <div id="posture-tip" class="pro-quote premium-quote">Escolha uma situação para receber uma orientação.</div>
+        `);
+    };
+
+    window.ToolsApp.nextPostureTip = function() {
+        const selected = toolValue('posture-scenario');
+        const item = (window.premiumPostureScenarios || []).find(([title]) => title === selected) || (window.premiumPostureScenarios || [])[0];
+        document.getElementById('posture-tip').innerHTML = `<strong>${premiumEscape(item?.[0] || 'Postura')}</strong><span>${premiumEscape(item?.[1] || '')}</span>`;
+    };
+
+    window.ToolsApp.renderDigitalProfessionalCard = function(c) {
+        const u = getUser();
+        const photo = localStorage.getItem('user_profile_pic');
+        const initial = premiumEscape(u.name || 'Aluno').slice(0, 1).toUpperCase();
+        c.innerHTML += toolShell('tool-pro-card', 'fas fa-address-card', 'Cartão de Identidade Profissional Digital', 'Um cartão de apresentação rápido, com foto local quando existir.', `
+            <div class="premium-id-card">
+                <div class="premium-id-photo">${photo ? `<img src="${photo}" alt="Foto do perfil">` : `<span>${initial}</span>`}</div>
+                <div>
+                    <small>Projeto Bravo Charlie</small>
+                    <strong>${premiumEscape(u.name || 'Aluno Bravo Charlie')}</strong>
+                    <p>${u.courseType === 'SP' ? 'Segurança Patrimonial' : 'Bombeiro Civil / Brigadista'}</p>
+                    <em>${premiumEscape(u.email || 'E-mail não informado')} ${u.phone ? `• ${premiumEscape(u.phone)}` : ''}</em>
+                </div>
+            </div>
+            ${actions(`<button class="tool-mini-btn" onclick="ToolsApp.copyProfessionalCard()"><i class="fas fa-share-nodes"></i> Copiar apresentação</button>`)}
+            <small class="premium-note">A foto é a mesma do Perfil e fica salva apenas neste dispositivo.</small>
+        `);
+    };
+
+    window.ToolsApp.renderOperationMode = function(c) {
+        const saved = toolStore.get('tool_operation_tasks_v93', [
+            { id: 1, text: 'Conferir uniforme, postura e identificação', done: false },
+            { id: 2, text: 'Checar rádio, telefone e contatos de emergência', done: false },
+            { id: 3, text: 'Mapear rotas, extintores, saídas e riscos do local', done: false },
+            { id: 4, text: 'Registrar início do plantão e observações importantes', done: false }
+        ]);
+        toolStore.set('tool_operation_tasks_v93', saved);
+        c.innerHTML += toolShell('tool-operation', 'fas fa-tower-observation', 'Modo Operação', 'Checklist prático para assumir plantão, evento ou missão.', `
+            <div class="pro-grid">
+                ${input('operation-name', 'Nome da operação', 'Plantão, evento, estágio ou serviço')}
+                ${input('operation-risk', 'Risco principal', 'Público, incêndio, altura, APH, conflito...')}
+                ${input('operation-task', 'Nova tarefa', 'Adicionar tarefa operacional')}
+            </div>
+            ${actions(`<button class="tool-mini-btn" onclick="ToolsApp.addOperationTask()"><i class="fas fa-plus"></i> Adicionar tarefa</button><button class="tool-mini-btn ghost" onclick="ToolsApp.resetOperationTasks()"><i class="fas fa-rotate-left"></i> Reiniciar checklist</button>`)}
+            <div id="operation-list" class="premium-check-list"></div>
+        `);
+        ToolsApp.refreshOperationTasks();
+    };
+
+    window.ToolsApp.addOperationTask = function() {
+        const text = toolValue('operation-task');
+        if (!text) return ToolsApp.toast('Escreva uma tarefa', 'info');
+        const items = toolStore.get('tool_operation_tasks_v93', []);
+        items.push({ id: Date.now(), text, done: false });
+        toolStore.set('tool_operation_tasks_v93', items);
+        document.getElementById('operation-task').value = '';
+        ToolsApp.refreshOperationTasks();
+    };
+
+    window.ToolsApp.toggleOperationTask = function(id) {
+        const items = toolStore.get('tool_operation_tasks_v93', []).map(i => i.id === id ? { ...i, done: !i.done } : i);
+        toolStore.set('tool_operation_tasks_v93', items);
+        ToolsApp.refreshOperationTasks();
+    };
+
+    window.ToolsApp.resetOperationTasks = function() {
+        toolStore.set('tool_operation_tasks_v93', []);
+        ToolsApp.openProfessionalTool('operation');
+    };
+
+    window.ToolsApp.refreshOperationTasks = function() {
+        const list = document.getElementById('operation-list');
+        if (!list) return;
+        const items = toolStore.get('tool_operation_tasks_v93', []);
+        const done = items.filter(i => i.done).length;
+        list.innerHTML = `
+            <div class="premium-progress-line"><span style="width:${items.length ? (done / items.length) * 100 : 0}%"></span></div>
+            ${items.length ? items.map(i => `<button class="${i.done ? 'done' : ''}" onclick="ToolsApp.toggleOperationTask(${i.id})"><i class="fas ${i.done ? 'fa-check-circle' : 'fa-circle'}"></i><span>${premiumEscape(i.text)}</span></button>`).join('') : '<div class="pro-empty">Adicione tarefas para montar sua operação.</div>'}`;
+    };
+
+    window.ToolsApp.renderCrisisSimulator = function(c) {
+        window.premiumCrisisScenarios = {
+            fire: {
+                title: 'Princípio de incêndio em local com público',
+                options: [
+                    ['Entrar sozinho para resolver rápido', 'danger', 'Risco alto. Agir sozinho pode criar nova vítima e quebrar a cadeia de segurança.'],
+                    ['Isolar, orientar saída, acionar apoio e avaliar extintor com rota de fuga', 'success', 'Melhor decisão. Priorizou pessoas, comunicação, apoio e segurança operacional.'],
+                    ['Esperar alguém assumir sem comunicar', 'warning', 'Decisão fraca. A demora aumenta o risco e a desorganização.']
+                ]
+            },
+            faint: {
+                title: 'Pessoa desmaia em ambiente com curiosos ao redor',
+                options: [
+                    ['Afastar curiosos, avaliar responsividade e acionar suporte', 'success', 'Conduta adequada. Protege cena, vítima e organiza o atendimento.'],
+                    ['Dar água imediatamente', 'danger', 'Inadequado. Pessoa inconsciente ou confusa pode aspirar. Primeiro avalie segurança e responsividade.'],
+                    ['Levantar a vítima rápido', 'warning', 'Pode piorar queda ou lesão. Controle o ambiente e avalie antes de movimentar.']
+                ]
+            },
+            conflict: {
+                title: 'Visitante agressivo tenta entrar em área restrita',
+                options: [
+                    ['Discutir no mesmo tom', 'danger', 'Escala o conflito. Profissionalismo exige distância, clareza e apoio.'],
+                    ['Manter distância, comunicar regra, chamar apoio e registrar', 'success', 'Melhor resposta. Une segurança, postura e rastreabilidade.'],
+                    ['Ignorar para evitar problema', 'warning', 'Pode gerar falha de segurança. O correto é comunicar e acionar apoio.']
+                ]
+            }
+        };
+        c.innerHTML += toolShell('tool-crisis', 'fas fa-triangle-exclamation', 'Simulador de Crise Real', 'Treine decisão sob pressão com feedback imediato.', `
+            <div class="pro-grid">
+                <label class="pro-field"><span>Cenário</span><select id="crisis-scenario"><option value="fire">Incêndio com público</option><option value="faint">Mal súbito</option><option value="conflict">Controle de acesso</option></select></label>
+            </div>
+            ${actions(`<button class="tool-mini-btn" onclick="ToolsApp.loadCrisisScenario()"><i class="fas fa-play"></i> Carregar cenário</button>`)}
+            <div id="crisis-stage" class="premium-crisis-stage"></div>
+            <div id="crisis-output" class="premium-result-card">Escolha um cenário para começar.</div>
+        `);
+        ToolsApp.loadCrisisScenario();
+    };
+
+    window.ToolsApp.loadCrisisScenario = function() {
+        const scenario = window.premiumCrisisScenarios?.[toolValue('crisis-scenario') || 'fire'];
+        document.getElementById('crisis-stage').innerHTML = `
+            <strong>${premiumEscape(scenario.title)}</strong>
+            <div class="pro-choice-grid">${scenario.options.map((o, index) => `<button onclick="ToolsApp.answerCrisis(${index})">${premiumEscape(o[0])}</button>`).join('')}</div>`;
+        document.getElementById('crisis-output').innerHTML = 'Escolha uma ação para receber o feedback.';
+    };
+
+    window.ToolsApp.answerCrisis = function(option) {
+        const scenario = window.premiumCrisisScenarios?.[toolValue('crisis-scenario') || 'fire'];
+        const selected = scenario.options[option];
+        document.getElementById('crisis-output').innerHTML = `<div class="premium-feedback ${selected[1]}"><strong>${selected[1] === 'success' ? 'Boa decisão' : selected[1] === 'warning' ? 'Atenção' : 'Risco alto'}</strong><span>${premiumEscape(selected[2])}</span></div>`;
+    };
+
+    window.ToolsApp.renderAchievementWallet = function(c) {
+        const completed = toolStore.get('gateBombeiroCompletedModules_v3', []);
+        const certs = toolStore.get('tool_certificates_v93', []).length || toolStore.get('tool_certificates_v1', []).length;
+        const portfolio = toolStore.get('tool_portfolio_v93', []).length || toolStore.get('tool_portfolio_v1', []).length;
+        const docs = toolStore.get('tool_documents_v93', []).length;
+        c.innerHTML += toolShell('tool-wallet', 'fas fa-medal', 'Carteira de Conquistas', 'Transforme sua evolução em prova visual de compromisso.', `
+            <div class="premium-tool-summary">
+                ${premiumMetric('fas fa-check-double', 'Módulos', completed.length, 'green')}
+                ${premiumMetric('fas fa-certificate', 'Certificados', certs, 'orange')}
+                ${premiumMetric('fas fa-briefcase', 'Portfólio', portfolio, 'blue')}
+                ${premiumMetric('fas fa-folder-open', 'Documentos', docs, 'purple')}
+            </div>
+            <div class="premium-achievement-road">
+                <span class="${completed.length >= 5 ? 'done' : ''}">Começou com consistência</span>
+                <span class="${completed.length >= 20 ? 'done' : ''}">Entrou no ritmo operacional</span>
+                <span class="${completed.length >= 40 ? 'done' : ''}">Pronto para reta final</span>
+                <span class="${completed.length >= 56 ? 'done' : ''}">Formação concluída</span>
+            </div>
+        `);
+    };
+
 })();
 

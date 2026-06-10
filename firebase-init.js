@@ -34,6 +34,29 @@
       return true;
   }
 
+  function friendlyFirebaseError(error, fallback) {
+      const code = error && error.code ? error.code : '';
+      const message = error && error.message ? error.message : '';
+
+      if (code === 'permission-denied' || code === 'firestore/permission-denied' || /permission/i.test(message)) {
+          return "Não foi possível finalizar o cadastro por falta de permissão no banco de dados. Avise o suporte para liberar o acesso de cadastro.";
+      }
+      if (code === 'auth/email-already-in-use') {
+          return "Este e-mail já está cadastrado. Faça login ou use outro e-mail.";
+      }
+      if (code === 'auth/invalid-email') {
+          return "Digite um e-mail válido.";
+      }
+      if (code === 'auth/weak-password') {
+          return "A senha precisa ter pelo menos 6 caracteres.";
+      }
+      if (code === 'auth/network-request-failed') {
+          return "Falha de conexão. Verifique a internet e tente novamente.";
+      }
+
+      return message || fallback || "Não foi possível concluir a operação. Tente novamente.";
+  }
+
   // --- 3. CADASTRO DE ALUNOS (SIGN UP) ---
   window.FirebaseCourse.signUpWithEmail = async function(name, email, password, cpf, company, phone, courseType = 'BC') {
       const cleanCPF = cpf.replace(/[^\d]+/g,'');
@@ -41,42 +64,52 @@
           throw new Error("O número de CPF digitado é inválido. Verifique os dados.");
       }
 
-      const cpfCheck = await window.__fbDB.collection('cpfs').doc(cleanCPF).get();
-      if (cpfCheck.exists) {
-          throw new Error("Este CPF já está cadastrado em nossa base tática.");
+      let user = null;
+      try {
+          const cred = await window.__fbAuth.createUserWithEmailAndPassword(email, password);
+          user = cred.user;
+
+          const cpfRef = window.__fbDB.collection('cpfs').doc(cleanCPF);
+          const cpfCheck = await cpfRef.get();
+          if (cpfCheck.exists) {
+              await user.delete().catch(() => {});
+              throw new Error("Este CPF já está cadastrado em nossa base tática.");
+          }
+
+          const hoje = new Date();
+          const trialValidade = new Date(hoje);
+          trialValidade.setDate(hoje.getDate() + 30); // 30 dias de acesso padrão
+
+          const sessionID = Math.random().toString(36).substring(2) + Date.now().toString(36);
+
+          const batch = window.__fbDB.batch();
+          const userRef = window.__fbDB.collection('users').doc(user.uid);
+          batch.set(userRef, {
+              name: name,
+              email: email,
+              cpf: cleanCPF,
+              phone: phone || '',
+              company: (company || 'Particular').toUpperCase().trim(),
+              courseType: courseType, // Define se é aluno de BC ou SP
+              status: 'trial',
+              planType: 'Degustação (30 dias)',
+              acesso_ate: trialValidade.toISOString(),
+              current_session_id: sessionID,
+              signup_device: navigator.userAgent,
+              signup_origin: window.location.origin || window.location.href,
+              created_at_client: new Date().toISOString(),
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+
+          batch.set(cpfRef, { uid: user.uid });
+          await batch.commit();
+          return user;
+      } catch (error) {
+          if (user && error && error.code && !error.code.startsWith('auth/')) {
+              await user.delete().catch(() => {});
+          }
+          throw new Error(friendlyFirebaseError(error, "Erro ao criar conta."));
       }
-
-      const cred = await window.__fbAuth.createUserWithEmailAndPassword(email, password);
-      const user = cred.user;
-
-      const hoje = new Date();
-      const trialValidade = new Date(hoje);
-      trialValidade.setDate(hoje.getDate() + 30); // 30 dias de acesso padrão
-
-      const sessionID = Math.random().toString(36).substring(2) + Date.now().toString(36);
-
-      const batch = window.__fbDB.batch();
-      
-      const userRef = window.__fbDB.collection('users').doc(user.uid);
-      batch.set(userRef, {
-          name: name,
-          email: email,
-          cpf: cleanCPF,
-          phone: phone || '',
-          company: (company || 'Particular').toUpperCase().trim(),
-          courseType: courseType, // Define se é aluno de BC ou SP
-          status: 'trial',
-          planType: 'Degustação (30 dias)',
-          acesso_ate: trialValidade.toISOString(),
-          current_session_id: sessionID,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-
-      const cpfRef = window.__fbDB.collection('cpfs').doc(cleanCPF);
-      batch.set(cpfRef, { uid: user.uid });
-
-      await batch.commit();
-      return user;
   };
 
   // --- 4. ACESSO POR EMAIL E SENHA (SIGN IN) ---

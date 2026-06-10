@@ -12,6 +12,56 @@ const normalizeSearchText = (value) => String(value || '')
 
 const onlyDigits = (value) => String(value || '').replace(/\D/g, '');
 
+const escapeHtml = (value) => String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+const escapeJsString = (value) => String(value ?? '')
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\n/g, ' ')
+    .replace(/\r/g, ' ');
+
+const toDateFromFirestore = (value) => {
+    if (!value) return null;
+    if (typeof value.toDate === 'function') return value.toDate();
+    if (value.seconds) return new Date(value.seconds * 1000);
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const formatAdminDateTime = (value) => {
+    const date = toDateFromFirestore(value);
+    if (!date) return 'Não registrado';
+    return date.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+};
+
+const getAdminCreatedDateInfo = (user) => {
+    const directDate = toDateFromFirestore(user?.createdAt) || toDateFromFirestore(user?.created_at_client) || toDateFromFirestore(user?.signup_at);
+    if (directDate) return { date: directDate, inferred: false };
+
+    const trialEnd = toDateFromFirestore(user?.acesso_ate);
+    const isTrialLike = normalizeSearchText(user?.status) === 'trial' || normalizeSearchText(user?.planType).includes('degustacao');
+    if (trialEnd && isTrialLike) {
+        const inferredDate = new Date(trialEnd);
+        inferredDate.setDate(inferredDate.getDate() - 30);
+        return { date: inferredDate, inferred: true };
+    }
+
+    return { date: null, inferred: false };
+};
+
+let currentAdminQuickFilter = 'all';
+
 const userMatchesSearch = (user, searchTerm) => {
     const term = normalizeSearchText(searchTerm);
     const termDigits = onlyDigits(searchTerm);
@@ -37,9 +87,8 @@ const userMatchesSearch = (user, searchTerm) => {
 
 window.filterAdminTable = function() {
     const input = document.getElementById('admin-search-input');
-    if (!input) return;
-    const termo = normalizeSearchText(input.value);
-    const termoDigits = onlyDigits(input.value);
+    const termo = normalizeSearchText(input?.value || '');
+    const termoDigits = onlyDigits(input?.value || '');
     const linhas = document.querySelectorAll('#admin-table-body tr');
     linhas.forEach(linha => {
         const rowText = normalizeSearchText(linha.innerText);
@@ -47,8 +96,32 @@ window.filterAdminTable = function() {
         const matchesEmpty = !termo && !termoDigits;
         const matchesText = termo && rowText.includes(termo);
         const matchesDigits = termoDigits && rowDigits.includes(termoDigits);
-        linha.style.display = (matchesEmpty || matchesText || matchesDigits) ? '' : 'none';
+        let matchesQuickFilter = true;
+
+        if (currentAdminQuickFilter === 'recent') matchesQuickFilter = linha.dataset.adminRecent === 'true';
+        if (currentAdminQuickFilter === 'duplicates') matchesQuickFilter = linha.dataset.adminDuplicate === 'true';
+        if (currentAdminQuickFilter === 'expired') matchesQuickFilter = linha.dataset.adminExpired === 'true';
+        if (currentAdminQuickFilter === 'trial') matchesQuickFilter = linha.dataset.adminStatus === 'trial';
+        if (currentAdminQuickFilter === 'premium') matchesQuickFilter = linha.dataset.adminStatus === 'premium';
+
+        linha.style.display = (matchesQuickFilter && (matchesEmpty || matchesText || matchesDigits)) ? '' : 'none';
     });
+};
+
+window.setAdminQuickFilter = function(filter) {
+    currentAdminQuickFilter = filter || 'all';
+    const input = document.getElementById('admin-search-input');
+    if (input) input.value = '';
+
+    document.querySelectorAll('[data-admin-filter-btn]').forEach(btn => {
+        const isActive = btn.dataset.adminFilterBtn === currentAdminQuickFilter;
+        btn.classList.toggle('ring-2', isActive);
+        btn.classList.toggle('ring-blue-500', isActive);
+        btn.classList.toggle('scale-[1.02]', isActive);
+    });
+
+    window.filterAdminTable();
+    document.getElementById('admin-users-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 
 window.filterManagerTable = function() {
@@ -203,6 +276,174 @@ document.body.addEventListener('input', (e) => {
         };
     }
 
+    function getStoredJson(key, fallback) {
+        try {
+            const parsed = JSON.parse(localStorage.getItem(key) || '');
+            return parsed ?? fallback;
+        } catch (error) {
+            return fallback;
+        }
+    }
+
+    function setStoredJson(key, value) {
+        localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    function getFavoriteModules() {
+        return getStoredJson('pbc_favorite_modules_v1', []);
+    }
+
+    function isFavoriteModule(id) {
+        return getFavoriteModules().includes(id);
+    }
+
+    window.toggleFavoriteModule = function(id) {
+        if (!id || !moduleContent[id]) return;
+        let favorites = getFavoriteModules();
+        const isFav = favorites.includes(id);
+        favorites = isFav ? favorites.filter(item => item !== id) : [...favorites, id];
+        setStoredJson('pbc_favorite_modules_v1', favorites);
+        const btn = document.querySelector(`[data-favorite-module="${id}"]`);
+        if (btn) {
+            btn.classList.toggle('active', !isFav);
+            btn.innerHTML = `<i class="${!isFav ? 'fas' : 'far'} fa-star"></i> ${!isFav ? 'Favorito' : 'Favoritar'}`;
+        }
+        showAppToast(!isFav ? 'Adicionado aos favoritos' : 'Removido dos favoritos', moduleContent[id].title, 'success');
+        if (!currentModuleId) goToHomePage();
+    };
+
+    function recordStudyEvent(type, label, moduleId = currentModuleId) {
+        const history = getStoredJson('pbc_study_history_v1', []);
+        const event = {
+            type,
+            label,
+            moduleId,
+            at: new Date().toISOString()
+        };
+        setStoredJson('pbc_study_history_v1', [event, ...history.filter(item => item.label !== label || item.type !== type)].slice(0, 20));
+    }
+
+    function getStudyHistory() {
+        return getStoredJson('pbc_study_history_v1', []);
+    }
+
+    function formatShortDate(value) {
+        const date = toDateFromFirestore(value);
+        if (!date) return 'Não informado';
+        return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    }
+
+    function getAccessStatus() {
+        const date = toDateFromFirestore(currentUserData?.acesso_ate);
+        if (!date) return { label: 'Acesso não informado', tone: 'neutral', detail: 'Confirme seu status com a coordenação.' };
+        const diffDays = Math.ceil((date.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+        if (currentUserData?.status === 'premium') {
+            return { label: `Premium até ${formatShortDate(date)}`, tone: 'ok', detail: 'Seu acesso está liberado.' };
+        }
+        if (diffDays < 0) return { label: 'Acesso vencido', tone: 'danger', detail: 'Regularize para continuar estudando.' };
+        if (diffDays <= 5) return { label: `${diffDays} dia${diffDays === 1 ? '' : 's'} restantes`, tone: 'warn', detail: 'Seu período termina em breve.' };
+        return { label: `${diffDays} dias de acesso`, tone: 'info', detail: `Válido até ${formatShortDate(date)}.` };
+    }
+
+    function getImportantNoticeHtml() {
+        return `
+            <button type="button" class="student-notice-card" onclick="window.openStudentNotices?.()">
+                <span><i class="fas fa-bell"></i> Aviso importante</span>
+                <strong>Fique atento às oportunidades e comunicados</strong>
+                <small>Quando houver vagas, recados ou orientações da coordenação, elas aparecerão aqui.</small>
+            </button>
+        `;
+    }
+
+    window.openStudentNotices = function() {
+        showAppToast('Central de avisos', 'Em breve você receberá comunicados, vagas e oportunidades diretamente por aqui.', 'info');
+    };
+
+    function getJourneyStepHtml(stats) {
+        const steps = [
+            { key: 'start', label: 'Início', icon: 'fa-flag-checkered', done: stats.doneCount > 0 },
+            { key: 'content', label: 'Conteúdo', icon: 'fa-book-open', done: stats.percent >= 35 },
+            { key: 'exercise', label: 'Exercícios', icon: 'fa-pencil-alt', done: stats.percent >= 60 },
+            { key: 'simulado', label: 'Simulados', icon: 'fa-clipboard-check', done: stats.percent >= 85 },
+            { key: 'finish', label: 'Finalização', icon: 'fa-award', done: stats.percent >= 100 }
+        ];
+        return `
+            <div class="student-journey-line">
+                ${steps.map(step => `
+                    <div class="${step.done ? 'done' : ''}">
+                        <i class="fas ${step.icon}"></i>
+                        <span>${step.label}</span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    function getFavoriteCardsHtml() {
+        const favorites = getFavoriteModules().filter(id => moduleContent[id]);
+        if (!favorites.length) {
+            return `
+                <div class="student-empty-favorites">
+                    <i class="far fa-star"></i>
+                    <span>Você ainda não salvou favoritos. Abra uma aula e toque em Favoritar.</span>
+                </div>
+            `;
+        }
+        return favorites.slice(0, 4).map(id => `
+            <button type="button" data-open-module="${id}">
+                <i class="${moduleContent[id].iconClass}"></i>
+                <span>${moduleContent[id].title}</span>
+            </button>
+        `).join('');
+    }
+
+    function getHistoryHtml() {
+        const history = getStudyHistory();
+        if (!history.length) return '<p class="student-history-empty">Seu histórico aparece aqui conforme você estuda.</p>';
+        return history.slice(0, 4).map(item => {
+            const date = new Date(item.at);
+            const when = Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+            return `<li><i class="fas fa-clock-rotate-left"></i><span>${escapeHtml(item.label)}</span><small>${when}</small></li>`;
+        }).join('');
+    }
+
+    function getLibraryItems() {
+        const items = [];
+        Object.keys(moduleMediaAssets || {}).forEach(id => {
+            const module = moduleContent[id];
+            const media = moduleMediaAssets[id];
+            if (!module || !media) return;
+            items.push({ moduleId: id, title: module.title, type: 'Vídeo', icon: 'fa-circle-play', url: media.video });
+            items.push({ moduleId: id, title: module.title, type: 'Podcast', icon: 'fa-podcast', url: media.podcast });
+            items.push({ moduleId: id, title: module.title, type: 'Infográfico', icon: 'fa-chart-simple', url: media.image });
+            items.push({ moduleId: id, title: module.title, type: 'Slides', icon: 'fa-file-powerpoint', url: media.pdf });
+        });
+        return items;
+    }
+
+    function getSearchItems() {
+        const moduleItems = getVisibleModuleIds(currentUserData, { includeOptional: true }).map(id => ({
+            type: 'Aula',
+            icon: moduleContent[id]?.iconClass || 'fas fa-book',
+            title: moduleContent[id]?.title || id,
+            description: 'Módulo do curso',
+            moduleId: id
+        }));
+        const toolItems = [
+            ['Ferramentas', 'Central de ferramentas profissionais', 'module59', 'fas fa-toolbox'],
+            ['Modo Sobrevivência', 'Treino rápido de perguntas e respostas', 'module60', 'fas fa-heart-pulse'],
+            ['Simulador de Ocorrências', 'Cenários práticos de decisão', 'module61', 'fas fa-headset']
+        ].map(([title, description, id, icon]) => ({ type: 'Atalho', icon, title, description, moduleId: id }));
+        const libraryItems = getLibraryItems().map(item => ({
+            type: item.type,
+            icon: `fas ${item.icon}`,
+            title: `${item.type} - ${item.title}`,
+            description: 'Material complementar da aula',
+            moduleId: item.moduleId
+        }));
+        return [...moduleItems, ...toolItems, ...libraryItems];
+    }
+
     // --- ACESSIBILIDADE ---
     const fab = document.getElementById('accessibility-fab');
     const menu = document.getElementById('accessibility-menu');
@@ -290,6 +531,186 @@ document.body.addEventListener('input', (e) => {
             podcast: 'https://youtu.be/-x2ykLcVsA0',
             image: 'https://drive.google.com/file/d/1JsrJBNrRNqsAgeBIjD021ZxLdLjO2SRU/view?usp=drive_link',
             pdf: 'https://drive.google.com/file/d/1_tHedK5ZrHIdMPw7Z0rjxUJFSR6isPC4/view?usp=drive_link'
+        },
+        module11: {
+            video: 'https://youtu.be/bbXmFyfQ3MU',
+            podcast: 'https://youtu.be/bO5NUJY-e3E',
+            image: 'https://drive.google.com/file/d/1F_VfmXraPSF3sGC4jWRQe8t0SVA0BDFx/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1IcGgJXEWFv8OC3MdS3VTj_7cRaWQ7sR1/view?usp=drive_link'
+        },
+        module12: {
+            video: 'https://youtu.be/tUemwgapo3A',
+            podcast: 'https://youtu.be/Tj-UXUPWYHI',
+            image: 'https://drive.google.com/file/d/1w8lcWXczjk4EWHZS-HB8krmOdqtZhFro/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1s6LX2HrvnfUITjXdyWfkXwLARIhy4eJz/view?usp=drive_link'
+        },
+        module13: {
+            video: 'https://youtu.be/kRYnJdVWPX8',
+            podcast: 'https://youtu.be/6V4gYdlJheQ',
+            image: 'https://drive.google.com/file/d/1jx7Rfukc8Tyc71U1hPaqsrvZKkE9jQYl/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1PgXdYGe5NVF6tkdOIJcn4G5ThRnFEi2V/view?usp=drive_link'
+        },
+        module14: {
+            video: 'https://youtu.be/WgiClcPMLf0',
+            podcast: 'https://youtu.be/oeQFT_8IFC0',
+            image: 'https://drive.google.com/file/d/1PzGVlLBbCFOK6ZvRkC3QThcbzqAt7Z92/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1qDVCi9su-sypdEYiAmlvrxEVS37df0HM/view?usp=drive_link'
+        },
+        module15: {
+            video: 'https://youtu.be/VZKz1mE_vE4',
+            podcast: 'https://youtu.be/AWHo_iobgc4',
+            image: 'https://drive.google.com/file/d/1psmhp5c88eALeIQPZ7cfA28IVIFjCsTX/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1009ijsFdzjN8ZaLclFeXIHNiE_f3fLIV/view?usp=drive_link'
+        },
+        module16: {
+            video: 'https://youtu.be/1284CLR4ahU',
+            podcast: 'https://youtu.be/IC72-5iN7ag',
+            image: 'https://drive.google.com/file/d/1xX-Fd_sGTd8Nyzwkt2V_xMKzw6IBH1r2/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1lM-MJNIveWpb8HbpvQkateQzQHZLE6Ss/view?usp=drive_link'
+        },
+        module17: {
+            video: 'https://youtu.be/rIhQEeqZFuM',
+            podcast: 'https://youtu.be/F5vMK77PqCM',
+            image: 'https://drive.google.com/file/d/1fBW0FFvR8OZjsmIov9taUqs1siHe-g_m/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1gjcDzuhGpVNEXbmqFVFTAJe2h-l1SFJ6/view?usp=drive_link'
+        },
+        module18: {
+            video: 'https://youtu.be/A-ArZDHUafs',
+            podcast: 'https://youtu.be/7P4hsGFZz-k',
+            image: 'https://drive.google.com/file/d/1oTkIVLcVYSmNLadD4_-qIpXVFcHZ5b2L/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1N-8qG0xXsOMEIS9o7liyrXbYfIxwx-6n/view?usp=drive_link'
+        },
+        module19: {
+            video: 'https://youtu.be/8R7QZriDVz4',
+            podcast: 'https://youtu.be/isi6p7qTL5o',
+            image: 'https://drive.google.com/file/d/1d_JJAX6jlWfZqDWhG-PNF8CalaebP0JA/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1B2NCe1obDGfrw5w-bskK3k5pd6XAzylb/view?usp=drive_link'
+        },
+        module20: {
+            video: 'https://youtu.be/UlAkN1aljL4',
+            podcast: 'https://youtu.be/r5QLM4836mE',
+            image: 'https://drive.google.com/file/d/1Id_Zj4aGCUYYxpOSfbGwh0fAL1fqmC_Z/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1fikndpHBPQwqQYCVcqj4Kp2f7MokocCM/view?usp=drive_link'
+        },
+        module21: {
+            video: 'https://youtu.be/QO5UoW2c-70',
+            podcast: 'https://youtu.be/yugc_wPXt1s',
+            image: 'https://drive.google.com/file/d/1lWC6x1Fl7StzbNnXC-s32yeCv3NvHOVb/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1EEiKMonR6RXSIvKNHn2CVNh2LqbOnGuN/view?usp=drive_link'
+        },
+        module22: {
+            video: 'https://youtu.be/Sv-6GjaQ9Yc',
+            podcast: 'https://youtu.be/P-eRkJNvYo4',
+            image: 'https://drive.google.com/file/d/1aOuxHzxAbNUrbssgpBq9MZ_I6igTsbYY/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1rgRAzS09VD0gF2Zh4Kq_1ccTTM8vyLWa/view?usp=drive_link'
+        },
+        module23: {
+            video: 'https://youtu.be/wrqTpZ6vra0',
+            podcast: 'https://youtu.be/kjjZE56xcf0',
+            image: 'https://drive.google.com/file/d/1igkI3-9yXuFgMo26yjb8VDHRwuCYP-1X/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1XodP8njs-xOECWvsLYWkaMe9uk564SyU/view?usp=drive_link'
+        },
+        module24: {
+            video: 'https://youtu.be/zDHhTU5-oqI',
+            podcast: 'https://youtu.be/7hBEKmNaDvU',
+            image: 'https://drive.google.com/file/d/1dyLqdEOBJN3owNUS8QpNxPzO36E2HQTE/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/156e24ZnsTwzJ-VTQZV00YD7sgLfnj4GI/view?usp=drive_link'
+        },
+        module25: {
+            video: 'https://youtu.be/vijDcLBWqJY',
+            podcast: 'https://youtu.be/JTgE1_nVjhE',
+            image: 'https://drive.google.com/file/d/1vcaofjBdtwHZezHRpJEG3ptWtGZHelko/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1R4LaOSMYS1peco40wrciBnlRkTLFHi8F/view?usp=drive_link'
+        },
+        module26: {
+            video: 'https://youtu.be/o1uCymRAKXs',
+            podcast: 'https://youtu.be/39r9CcmFYMk',
+            image: 'https://drive.google.com/file/d/1FwmAL9r0HpMGG0NB5zcX-BKV0uUk60MY/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1cP9fLWsOTcQ1sRFaPEPsgqWQs13YkuOF/view?usp=drive_link'
+        },
+        module27: {
+            video: 'https://youtu.be/i6nr5Loiv3g',
+            podcast: 'https://youtu.be/H8Uvw7CRek0',
+            image: 'https://drive.google.com/file/d/1rPiKL5GEJtoUFwkM-bbbzRiZLp37KFaR/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/12DbSVOwCXLOB6kqEilQPhzmgdiM7wNH1/view?usp=drive_link'
+        },
+        module28: {
+            video: 'https://youtu.be/Lb93ifWt_Io',
+            podcast: 'https://youtu.be/o2MZBZYwVvA',
+            image: 'https://drive.google.com/file/d/1Iyybgf0jxl3JJu9iNQxWKRgscPyJhDSt/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1nN8oLH8SdxxVKC9OjK6L96QOkhXK0Jvz/view?usp=drive_link'
+        },
+        module29: {
+            video: 'https://youtu.be/_ypDOkKF9ls',
+            podcast: 'https://youtu.be/A5X5BKAr9v0',
+            image: 'https://drive.google.com/file/d/10H9CXNiyU0gf22MlNqtYqLtjYiyCwxlA/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/19cw-zIMmgVlZFZ91kB0DwD2TWK-Ky6eo/view?usp=drive_link'
+        },
+        module30: {
+            video: 'https://youtu.be/zmK0jIYzjGU',
+            podcast: 'https://youtu.be/I1ppMQ95X4U',
+            image: 'https://drive.google.com/file/d/1KbOEDJceTH4uqibJS1JAoFLHySWfIEk8/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1gxdpZGjh3byO5l9Yj112gigrROZ_Wv_c/view?usp=drive_link'
+        },
+        module31: {
+            video: 'https://youtu.be/hII-E3aIJjE',
+            podcast: 'https://youtu.be/C-dn6zNtwYY',
+            image: 'https://drive.google.com/file/d/1R89IFaaNAajfKTo1rjQaNpI2TwgVUTjH/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1gsYvt934FHhF9qRPm9eynzHhxIyWvecO/view?usp=drive_link'
+        },
+        module32: {
+            video: 'https://youtu.be/dyuxwumBnC4',
+            podcast: 'https://youtu.be/RbXLslAzE2A',
+            image: 'https://drive.google.com/file/d/1MzD6fACO9qfo-WeUylkip8n_PKT51mDh/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1HanYRTteJ6fr7XMdhMcghCBPcu_xNTVQ/view?usp=drive_link'
+        },
+        module33: {
+            video: 'https://youtu.be/rPNhOcuKp6E',
+            podcast: 'https://youtu.be/cx4xbw75Fio',
+            image: 'https://drive.google.com/file/d/1xwT2JSiZJGyJakNzRaoF-jc6ptfAGspK/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1pcQt3kef5wi0H_rTTbr2hHPZXTJ3P-mp/view?usp=drive_link'
+        },
+        module34: {
+            video: 'https://youtu.be/mG6_l6DPrZg',
+            podcast: 'https://youtu.be/THsexjK7RLY',
+            image: 'https://drive.google.com/file/d/1YBoxy4L2zoCW48Gwu1o_ImcanZy6PW_Y/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/11lbPagh4VK0-Ht2ovzgX82Hr_ecRZEol/view?usp=drive_link'
+        },
+        module35: {
+            video: 'https://youtu.be/0OyYQq0ufFQ',
+            podcast: 'https://youtu.be/PYYHnRmHGzg',
+            image: 'https://drive.google.com/file/d/1y2-Ra_dVRxJffhaZydMp-m1mFDcE7TM_/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1VcIMiMSJQDm966YSx0QMuecO6j-66LPK/view?usp=drive_link'
+        },
+        module36: {
+            video: 'https://youtu.be/8w-uRRtAk9s',
+            podcast: 'https://youtu.be/kQ32AQ3Dg2E',
+            image: 'https://drive.google.com/file/d/1bI9Jw-iDqIU8B1HYTTdmpsYxDYfOABWL/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/131UA1HA2hEXuNy8dbr3Oto4XITR44xT0/view?usp=drive_link'
+        },
+        module37: {
+            video: 'https://youtu.be/kPR35j8BlvQ',
+            podcast: 'https://youtu.be/-3ldS7lN99Y',
+            image: 'https://drive.google.com/file/d/185oEDFSDZI4KscVZGxov5aRRZXx-5-XD/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1w440IGDL9C46nEj6Hu8eWtZJO2blHMic/view?usp=drive_link'
+        },
+        module38: {
+            video: 'https://youtu.be/dvZ1FnXGr58',
+            podcast: 'https://youtu.be/xfTiNjKOW6E',
+            image: 'https://drive.google.com/file/d/1LSq6XR3vjBCMHelDZRRKYfZzcarsZSC_/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1NgKLm8qlZf4zpnrtDGnRQUWbetAhA5ZR/view?usp=drive_link'
+        },
+        module39: {
+            video: 'https://youtu.be/DODosSF4pwI',
+            podcast: 'https://youtu.be/7S-3QrlkQYk',
+            image: 'https://drive.google.com/file/d/1JPWf5OQByDd3Sg5HtnZABHOmHKG6GN0d/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1picl3K9HSN2ifu9SHHYw_o6XrrAtqAzk/view?usp=drive_link'
+        },
+        module40: {
+            video: 'https://youtu.be/zUT27TKlucA',
+            podcast: 'https://youtu.be/gqNDWGs6KlM',
+            image: 'https://drive.google.com/file/d/1-vtWPP3PKG1vS74x7owXP7OB3bfIQpvX/view?usp=drive_link',
+            pdf: 'https://drive.google.com/file/d/1mxg_4hzfTO_C1r4ycGD1c4bo0rz9_Jtm/view?usp=drive_link'
         }
     };
 
@@ -825,6 +1246,7 @@ window.openAdminPanel = async function() {
     try {
         const snapshot = await db.collection('users').get();
         tbody.innerHTML = '';
+        currentAdminQuickFilter = 'all';
 
         let users = [];
         snapshot.forEach(doc => {
@@ -833,14 +1255,50 @@ window.openAdminPanel = async function() {
             users.push({ uid, data: u });
         });
 
-        // Ordena alfabeticamente
+        const countBy = (getKey) => {
+            const map = {};
+            users.forEach(({ data }) => {
+                const key = getKey(data);
+                if (!key) return;
+                map[key] = (map[key] || 0) + 1;
+            });
+            return map;
+        };
+
+        const cpfCounts = countBy(u => {
+            const cpf = onlyDigits(u.cpf);
+            return cpf.length >= 11 ? cpf : '';
+        });
+        const phoneCounts = countBy(u => {
+            const phone = onlyDigits(u.phone);
+            return phone.length >= 8 ? phone.slice(-9) : '';
+        });
+        const nameCounts = countBy(u => normalizeSearchText(u.name));
+
+        const getDuplicateAlerts = (u) => {
+            const alerts = [];
+            const cpf = onlyDigits(u.cpf);
+            const phone = onlyDigits(u.phone);
+            const name = normalizeSearchText(u.name);
+
+            if (cpf && cpfCounts[cpf] > 1) alerts.push('CPF repetido');
+            if (phone.length >= 8 && phoneCounts[phone.slice(-9)] > 1) alerts.push('telefone repetido');
+            if (name && nameCounts[name] > 1) alerts.push('nome repetido');
+
+            return alerts;
+        };
+
+        // Ordena por cadastro recente para você ver primeiro quem acabou de entrar.
         users.sort((a, b) => {
+            const da = getAdminCreatedDateInfo(a.data).date?.getTime() || 0;
+            const dbb = getAdminCreatedDateInfo(b.data).date?.getTime() || 0;
+            if (dbb !== da) return dbb - da;
             const na = (a.data.name || '').toLocaleLowerCase('pt-BR');
             const nb = (b.data.name || '').toLocaleLowerCase('pt-BR');
             return na.localeCompare(nb, 'pt-BR');
         });
 
-        let stats = { total: 0, premium: 0, trial: 0 };
+        let stats = { total: 0, premium: 0, trial: 0, recent: 0, expired: 0, duplicateSuspects: 0 };
 
         users.forEach(({ uid, data: u }) => {
             stats.total++;
@@ -853,6 +1311,16 @@ window.openAdminPanel = async function() {
             const validade = u.acesso_ate ? new Date(u.acesso_ate) : null;
             const isExpired = validade && new Date() > validade;
             const validadeStr = validade ? validade.toLocaleDateString('pt-BR') : '-';
+            const createdInfo = getAdminCreatedDateInfo(u);
+            const createdDate = createdInfo.date;
+            const createdAtStr = createdDate ? `${formatAdminDateTime(createdDate)}${createdInfo.inferred ? ' (estimado pelo trial)' : ''}` : 'Não registrado';
+            const lastLoginStr = formatAdminDateTime(u.last_login);
+            const isRecentSignup = createdDate && ((Date.now() - createdDate.getTime()) <= 7 * 24 * 60 * 60 * 1000);
+            const duplicateAlerts = getDuplicateAlerts(u);
+
+            if (isRecentSignup) stats.recent++;
+            if (isExpired) stats.expired++;
+            if (duplicateAlerts.length) stats.duplicateSuspects++;
 
             if (u.status === 'premium') {
                 if (isExpired) {
@@ -866,9 +1334,20 @@ window.openAdminPanel = async function() {
             }
 
             const cpf = u.cpf || 'Sem CPF';
+            const phone = u.phone || 'Sem telefone';
             const planoTipo = u.planType || (u.status === 'premium' ? 'Indefinido' : 'Trial');
             const deviceInfo = u.last_device || 'Desconhecido';
+            const signupDevice = u.signup_device || deviceInfo;
             const noteIconColor = u.adminNote ? 'text-yellow-500' : 'text-gray-400';
+            const duplicateBadge = duplicateAlerts.length
+                ? `<div class="mt-2 inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-red-50 border border-red-200 text-[11px] font-bold text-red-700"><i class="fas fa-triangle-exclamation"></i> Possível duplicado: ${escapeHtml(duplicateAlerts.join(', '))}</div>`
+                : '';
+            const recentBadge = isRecentSignup
+                ? `<span class="ml-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold">NOVO</span>`
+                : '';
+            const expiredBadge = isExpired
+                ? `<div class="mt-1 text-[11px] font-bold text-red-600"><i class="fas fa-clock"></i> Acesso vencido</div>`
+                : '';
 
             // --- NOVO: LÓGICA DO CURSO (BC vs SP) ---
             const cursoCodigo = u.courseType || 'BC'; // Padrão BC se não existir
@@ -878,32 +1357,42 @@ window.openAdminPanel = async function() {
                 : 'bg-red-100 text-red-800 border-red-200';
 
             const row = `
-                <tr class="border-b hover:bg-gray-50 transition-colors">
+                <tr id="admin-user-${uid}" data-admin-recent="${isRecentSignup ? 'true' : 'false'}" data-admin-duplicate="${duplicateAlerts.length ? 'true' : 'false'}" data-admin-expired="${isExpired ? 'true' : 'false'}" data-admin-status="${escapeHtml(u.status || 'trial')}" class="border-b hover:bg-gray-50 transition-colors ${duplicateAlerts.length ? 'bg-red-50/40' : ''}">
                     <td class="p-3 font-bold text-gray-800">
-                        ${u.name}
+                        ${escapeHtml(u.name || 'Sem nome')} ${recentBadge}
                         <div class="mt-1">
                             <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${cursoBadgeColor}">${cursoLabel}</span>
                         </div>
+                        ${duplicateBadge}
                     </td>
-                    <td class="p-3 text-gray-600 text-sm">${u.email}<br><span class="text-xs text-gray-500">CPF: ${cpf}</span></td>
-                    <td class="p-3 text-xs text-gray-500 max-w-[150px] truncate" title="${deviceInfo}">${deviceInfo}</td>
+                    <td class="p-3 text-gray-600 text-sm">
+                        ${escapeHtml(u.email || 'Sem e-mail')}<br>
+                        <span class="text-xs text-gray-500">CPF: ${escapeHtml(cpf)}</span><br>
+                        <span class="text-xs text-gray-500">Tel: ${escapeHtml(phone)}</span>
+                    </td>
+                    <td class="p-3 text-xs text-gray-500">
+                        <div><strong class="text-gray-700">Criou:</strong> ${createdAtStr}</div>
+                        <div class="mt-1"><strong class="text-gray-700">Último acesso:</strong> ${lastLoginStr}</div>
+                        <div class="mt-1 max-w-[180px] truncate" title="${escapeHtml(signupDevice)}"><strong class="text-gray-700">Dispositivo:</strong> ${escapeHtml(signupDevice)}</div>
+                    </td>
                     <td class="p-3">
                         <div class="flex flex-col items-start">
                             <span class="px-2 py-1 rounded text-xs font-bold uppercase ${statusColor}">${statusDisplay}</span>
                             <span class="text-xs text-gray-500 mt-1">${planoTipo}</span>
+                            ${expiredBadge}
                         </div>
                     </td>
                     <td class="p-3 text-sm font-medium">${validadeStr}</td>
                     <td class="p-3 flex flex-wrap gap-2">
-                        <button onclick="editUserData('${uid}', '${u.name}', '${cpf}')" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1.5 rounded text-xs shadow" title="Editar Dados"><i class="fas fa-pen"></i></button>
+                        <button onclick="editUserData('${uid}', '${escapeJsString(u.name)}', '${escapeJsString(cpf)}')" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1.5 rounded text-xs shadow" title="Editar Dados"><i class="fas fa-pen"></i></button>
                         
                         <!-- BOTÃO NOVO: ALTERAR CURSO -->
                         <button onclick="changeUserCourse('${uid}', '${cursoCodigo}')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2 py-1.5 rounded text-xs shadow" title="Alterar Curso (BC/SP)"><i class="fas fa-graduation-cap"></i></button>
                         
-                        <button onclick="editUserNote('${uid}', '${(u.adminNote || '').replace(/'/g, "\\'")}')" class="bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 px-2 py-1.5 rounded text-xs shadow" title="Nota Admin"><i class="fas fa-sticky-note ${noteIconColor}"></i></button>
+                        <button onclick="editUserNote('${uid}', '${escapeJsString(u.adminNote || '')}')" class="bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 px-2 py-1.5 rounded text-xs shadow" title="Nota Admin"><i class="fas fa-sticky-note ${noteIconColor}"></i></button>
                         <button onclick="manageUserAccess('${uid}')" class="bg-green-500 hover:bg-green-600 text-white px-2 py-1.5 rounded text-xs shadow" title="Gerenciar Plano"><i class="fas fa-calendar-alt"></i></button>
-                        <button onclick="sendResetEmail('${u.email}')" class="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1.5 rounded text-xs shadow" title="Resetar Senha"><i class="fas fa-key"></i></button>
-                        <button onclick="deleteUser('${uid}', '${u.name}', '${cpf}')" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1.5 rounded text-xs shadow" title="Excluir"><i class="fas fa-trash"></i></button>
+                        <button onclick="sendResetEmail('${escapeJsString(u.email || '')}')" class="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1.5 rounded text-xs shadow" title="Resetar Senha"><i class="fas fa-key"></i></button>
+                        <button onclick="deleteUser('${uid}', '${escapeJsString(u.name)}', '${escapeJsString(cpf)}')" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1.5 rounded text-xs shadow" title="Excluir"><i class="fas fa-trash"></i></button>
                         <button onclick="toggleManagerRole('${uid}', ${u.isManager})" class="${u.isManager ? 'bg-purple-600' : 'bg-gray-400'} hover:bg-purple-500 text-white px-2 py-1.5 rounded text-xs shadow" title="Alternar Gestor"><i class="fas fa-briefcase"></i></button>
                     </td>
                 </tr>
@@ -912,6 +1401,7 @@ window.openAdminPanel = async function() {
         });
 
         updateAdminStats(stats);
+        window.setAdminQuickFilter('all');
     } catch (err) {
         tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Erro ao carregar: ${err.message}</td></tr>`;
     }
@@ -921,10 +1411,16 @@ function updateAdminStats(stats) {
     const totalEl = document.getElementById('admin-total-users');
     const premEl  = document.getElementById('admin-total-premium');
     const trialEl = document.getElementById('admin-total-trial');
+    const recentEl = document.getElementById('admin-total-recent');
+    const expiredEl = document.getElementById('admin-total-expired');
+    const duplicateEl = document.getElementById('admin-total-duplicates');
 
     if (totalEl) totalEl.textContent = stats.total || 0;
     if (premEl)  premEl.textContent  = stats.premium || 0;
     if (trialEl) trialEl.textContent = stats.trial || 0;
+    if (recentEl) recentEl.textContent = stats.recent || 0;
+    if (expiredEl) expiredEl.textContent = stats.expired || 0;
+    if (duplicateEl) duplicateEl.textContent = stats.duplicateSuspects || 0;
 }
 
 
@@ -1333,6 +1829,7 @@ window.manageUserAccess = async function(uid) {
 
         currentModuleId = id;
         localStorage.setItem('gateBombeiroLastModule', id);
+        recordStudyEvent('module_open', d.title, id);
         
         if (window.speechSynthesis.speaking) window.speechSynthesis.cancel();
         if (simuladoTimerInterval) clearInterval(simuladoTimerInterval);
@@ -1469,6 +1966,9 @@ window.manageUserAccess = async function(uid) {
                             <span><i class="fas fa-headphones"></i> Áudio disponível</span>
                             ${hasLocalMedia ? '<span><i class="fas fa-video"></i> Vídeo e slides</span>' : ''}
                             <span><i class="fas fa-pencil-alt"></i> Exercícios ao final</span>
+                            <button type="button" class="study-favorite-btn ${isFavoriteModule(id) ? 'active' : ''}" data-favorite-module="${id}" onclick="window.toggleFavoriteModule('${id}')">
+                                <i class="${isFavoriteModule(id) ? 'fas' : 'far'} fa-star"></i> ${isFavoriteModule(id) ? 'Favorito' : 'Favoritar'}
+                            </button>
                         </div>
                     </div>
                     <button type="button" class="study-iam-nudge" onclick="window.ToolsApp?.openIamAssistant?.()">
@@ -1778,8 +2278,17 @@ window.manageUserAccess = async function(uid) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
             reader.onload = function(e) {
-                document.getElementById('id-card-photo').src = e.target.result;
-                localStorage.setItem('user_profile_pic', e.target.result);
+                const photoUrl = e.target.result;
+                const idCardPhoto = document.getElementById('id-card-photo');
+                const profilePhoto = document.getElementById('student-profile-photo-img');
+                const profileInitial = document.getElementById('student-profile-photo-initial');
+                if (idCardPhoto) idCardPhoto.src = photoUrl;
+                if (profilePhoto) {
+                    profilePhoto.src = photoUrl;
+                    profilePhoto.classList.remove('hidden');
+                }
+                if (profileInitial) profileInitial.classList.add('hidden');
+                localStorage.setItem('user_profile_pic', photoUrl);
             };
             reader.readAsDataURL(input.files[0]);
         }
@@ -2157,6 +2666,10 @@ window.manageUserAccess = async function(uid) {
             document.getElementById('expired-modal')?.classList.add('show');
             document.getElementById('name-modal-overlay')?.classList.add('show');
         });
+        document.getElementById('student-open-payment-compact')?.addEventListener('click', () => {
+            document.getElementById('expired-modal')?.classList.add('show');
+            document.getElementById('name-modal-overlay')?.classList.add('show');
+        });
 
         document.getElementById('restart-tour-inline')?.addEventListener('click', () => startOnboardingTour(true));
         updateBreadcrumbs();
@@ -2169,6 +2682,8 @@ window.manageUserAccess = async function(uid) {
         const continueTitle = stats.lastModule?.title || stats.nextModule?.title || 'Primeiro módulo';
         const nextTitle = stats.nextModule?.title || 'Curso concluído';
         const courseLabel = currentUserData?.courseType === 'SP' ? 'Segurança Patrimonial' : 'Bombeiro Civil e Brigadista';
+        const access = getAccessStatus();
+        const isFinished = stats.percent >= 100;
 
         return `
             <section class="student-home">
@@ -2192,6 +2707,28 @@ window.manageUserAccess = async function(uid) {
                     </div>
                 </div>
 
+                ${getJourneyStepHtml(stats)}
+
+                <div class="student-command-center">
+                    <article class="student-next-step-card">
+                        <span><i class="fas fa-location-arrow"></i> Meu próximo passo</span>
+                        <h3>${isFinished ? 'Você concluiu a jornada principal' : nextTitle}</h3>
+                        <p>${isFinished ? 'Agora o foco muda para carreira, revisão, oportunidades, documentos e manutenção das suas certificações.' : 'Entre no próximo módulo, finalize a leitura e pratique os exercícios antes de avançar.'}</p>
+                        <button class="action-button" data-open-module="${isFinished ? 'module59' : stats.nextModuleId}">
+                            <i class="fas ${isFinished ? 'fa-toolbox' : 'fa-arrow-right'} mr-2"></i> ${isFinished ? 'Abrir ferramentas pós-curso' : 'Abrir próximo passo'}
+                        </button>
+                    </article>
+
+                    <article class="student-access-card ${access.tone}">
+                        <span><i class="fas fa-id-badge"></i> Acesso</span>
+                        <strong>${access.label}</strong>
+                        <p>${access.detail}</p>
+                        <button id="student-open-payment-compact" type="button">Ver planos</button>
+                    </article>
+
+                    ${getImportantNoticeHtml()}
+                </div>
+
                 <div class="student-dashboard-grid">
                     <article class="student-stat-card">
                         <i class="fas fa-check-circle text-green-500"></i>
@@ -2210,7 +2747,18 @@ window.manageUserAccess = async function(uid) {
                     </article>
                 </div>
 
-                <div class="student-next-panel">
+                ${isFinished ? `
+                <div class="student-post-course-panel">
+                    <span><i class="fas fa-rocket"></i> Pós-curso ativo</span>
+                    <h3>Agora o aplicativo vira sua central profissional</h3>
+                    <p>Use a IAM, ferramentas de carreira, documentos, protocolos rápidos e revisão para continuar evoluindo mesmo após finalizar o curso.</p>
+                    <div>
+                        <button data-open-module="module59"><i class="fas fa-toolbox"></i> Ferramentas</button>
+                        <button type="button" onclick="window.renderStudentLibraryPage?.()"><i class="fas fa-folder-open"></i> Biblioteca</button>
+                        <button type="button" onclick="window.ToolsApp?.openIamAssistant?.()"><i class="fas fa-shield-halved"></i> IAM</button>
+                    </div>
+                </div>
+                ` : `<div class="student-next-panel">
                     <div>
                         <span class="student-eyebrow"><i class="fas fa-book-reader"></i> Próximo foco</span>
                         <h3>${nextTitle}</h3>
@@ -2219,17 +2767,227 @@ window.manageUserAccess = async function(uid) {
                     <button class="secondary-action-button" data-open-module="${stats.nextModuleId}">
                         <i class="fas fa-arrow-right mr-2"></i> Abrir próximo
                     </button>
+                </div>`}
+
+                <div class="student-priority-grid">
+                    <article>
+                        <span><i class="fas fa-compass"></i> Rota de estudo</span>
+                        <strong>${continueTitle}</strong>
+                        <p>Continue exatamente de onde parou e mantenha o ritmo sem procurar aula por aula.</p>
+                    </article>
+                    <article>
+                        <span><i class="fas fa-layer-group"></i> Materiais de apoio</span>
+                        <strong>Vídeos, podcasts e slides</strong>
+                        <p>Use os materiais complementares para revisar antes dos exercícios e simulados.</p>
+                    </article>
+                    <article>
+                        <span><i class="fas fa-shield-halved"></i> IAM no estudo</span>
+                        <strong>Dúvidas e resumos rápidos</strong>
+                        <p>Peça explicações objetivas, revise conteúdos e organize seu próximo passo.</p>
+                    </article>
+                </div>
+
+                <div class="student-hub-grid">
+                    <article class="student-hub-panel">
+                        <div class="student-hub-title">
+                            <span><i class="fas fa-star"></i> Favoritos</span>
+                            <button type="button" onclick="window.openGlobalSearch?.()">Buscar</button>
+                        </div>
+                        <div class="student-favorites-list">${getFavoriteCardsHtml()}</div>
+                    </article>
+                    <article class="student-hub-panel">
+                        <div class="student-hub-title">
+                            <span><i class="fas fa-clock-rotate-left"></i> Histórico</span>
+                            <button type="button" onclick="window.renderStudentProfilePage?.()">Perfil</button>
+                        </div>
+                        <ul class="student-history-list">${getHistoryHtml()}</ul>
+                    </article>
                 </div>
 
                 <div class="student-quick-actions">
                     <button data-quick-action="modules"><i class="fas fa-layer-group"></i><span>Módulos</span></button>
                     <button data-open-module="${stats.nextModuleId}"><i class="fas fa-pencil-alt"></i><span>Exercícios</span></button>
+                    <button data-open-module="module59"><i class="fas fa-toolbox"></i><span>Ferramentas</span></button>
                     <button id="student-open-payment"><i class="fas fa-crown"></i><span>Planos</span></button>
+                    <button type="button" onclick="window.openGlobalSearch?.()"><i class="fas fa-search"></i><span>Busca</span></button>
+                    <button type="button" onclick="window.renderStudentLibraryPage?.()"><i class="fas fa-folder-open"></i><span>Biblioteca</span></button>
+                    <button type="button" onclick="window.renderStudentProfilePage?.()"><i class="fas fa-user"></i><span>Perfil</span></button>
                     <button id="restart-tour-inline"><i class="fas fa-circle-question"></i><span>Tutorial</span></button>
                 </div>
             </section>
         `;
     }
+
+    window.renderStudentLibraryPage = function() {
+        const items = getLibraryItems();
+        currentModuleId = null;
+        document.getElementById('module-nav')?.classList.add('hidden');
+        contentArea.innerHTML = `
+            <section class="student-page-shell">
+                <div class="student-page-hero">
+                    <span><i class="fas fa-folder-open"></i> Biblioteca organizada</span>
+                    <h2>Materiais, slides, podcasts e infográficos</h2>
+                    <p>Um espaço único para revisar os materiais extras que já foram adicionados à plataforma.</p>
+                </div>
+                <div class="student-library-grid">
+                    ${items.length ? items.map(item => `
+                        <article class="student-library-card">
+                            <i class="fas ${item.icon}"></i>
+                            <div>
+                                <span>${item.type}</span>
+                                <strong>${escapeHtml(item.title)}</strong>
+                                <button type="button" data-open-module="${item.moduleId}">Abrir aula</button>
+                            </div>
+                        </article>
+                    `).join('') : `
+                        <div class="student-empty-state">
+                            <i class="fas fa-folder"></i>
+                            <strong>Biblioteca em construção</strong>
+                            <p>Conforme novos materiais forem cadastrados, eles aparecerão aqui.</p>
+                        </div>
+                    `}
+                </div>
+            </section>
+        `;
+        document.querySelectorAll('[data-open-module]').forEach(button => {
+            button.addEventListener('click', () => loadModuleContent(button.dataset.openModule || 'module1'));
+        });
+        updateBreadcrumbs('Biblioteca');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.renderStudentProfilePage = function() {
+        const stats = getLearningStats();
+        const access = getAccessStatus();
+        const userName = currentUserData?.name || 'Aluno';
+        const userInitial = escapeHtml(userName).slice(0, 1).toUpperCase();
+        const courseLabel = currentUserData?.courseType === 'SP' ? 'Segurança Patrimonial' : 'Bombeiro Civil e Brigadista';
+        const favorites = getFavoriteModules().filter(id => moduleContent[id]);
+        const savedPhoto = localStorage.getItem('user_profile_pic') || '';
+        const formatCpf = (value) => {
+            const digits = onlyDigits(value);
+            return digits.length === 11 ? digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : (value || 'Não informado');
+        };
+        const formatPhone = (value) => {
+            const digits = onlyDigits(value);
+            if (digits.length === 11) return digits.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+            if (digits.length === 10) return digits.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+            return value || 'Não informado';
+        };
+        currentModuleId = null;
+        document.getElementById('module-nav')?.classList.add('hidden');
+        contentArea.innerHTML = `
+            <section class="student-page-shell">
+                <div class="student-profile-header">
+                    <div class="student-profile-photo-wrap">
+                        <button type="button" class="student-profile-photo" onclick="document.getElementById('student-profile-photo-input')?.click()" title="Alterar foto do perfil">
+                            <img id="student-profile-photo-img" src="${escapeHtml(savedPhoto)}" alt="Foto do aluno" class="${savedPhoto ? '' : 'hidden'}">
+                            <span id="student-profile-photo-initial" class="${savedPhoto ? 'hidden' : ''}">${userInitial}</span>
+                            <i class="fas fa-camera"></i>
+                        </button>
+                        <input type="file" id="student-profile-photo-input" class="hidden" accept="image/*" onchange="window.updateProfilePic(this)">
+                    </div>
+                    <div class="student-profile-heading">
+                        <span>Perfil do aluno</span>
+                        <h2>${escapeHtml(userName)}</h2>
+                        <p>${escapeHtml(courseLabel)} • ${escapeHtml(currentUserData?.company || 'Turma não informada')}</p>
+                        <button type="button" class="student-profile-photo-action" onclick="document.getElementById('student-profile-photo-input')?.click()">
+                            <i class="fas fa-image"></i> Alterar foto
+                        </button>
+                        <small><i class="fas fa-lock"></i> A foto fica salva apenas neste dispositivo.</small>
+                    </div>
+                </div>
+                <div class="student-profile-details-grid">
+                    <article><i class="fas fa-user"></i><span>Nome completo</span><strong>${escapeHtml(userName)}</strong></article>
+                    <article><i class="fas fa-envelope"></i><span>E-mail cadastrado</span><strong>${escapeHtml(currentUserData?.email || 'Não informado')}</strong></article>
+                    <article><i class="fas fa-id-card"></i><span>CPF</span><strong>${escapeHtml(formatCpf(currentUserData?.cpf))}</strong></article>
+                    <article><i class="fas fa-phone"></i><span>Telefone</span><strong>${escapeHtml(formatPhone(currentUserData?.phone))}</strong></article>
+                </div>
+                <div class="student-profile-grid">
+                    <article><span>Status</span><strong>${escapeHtml(currentUserData?.status || 'trial').toUpperCase()}</strong><small>${access.label}</small></article>
+                    <article><span>Progresso</span><strong>${stats.percent}%</strong><small>${stats.doneCount}/${stats.total} módulos</small></article>
+                    <article><span>Conquistas</span><strong>${stats.achievementCount}</strong><small>áreas desbloqueadas</small></article>
+                    <article><span>Favoritos</span><strong>${favorites.length}</strong><small>itens salvos</small></article>
+                </div>
+                <div class="student-certificate-panel">
+                    <div>
+                        <span><i class="fas fa-award"></i> Certificados e validades</span>
+                        <h3>${stats.percent >= 100 ? 'Curso principal concluído' : 'Continue avançando para liberar sua finalização'}</h3>
+                        <p>Use esta área como referência para status, validade de acesso e materiais que sustentam sua carreira profissional.</p>
+                    </div>
+                    <button type="button" onclick="window.renderStudentLibraryPage?.()"><i class="fas fa-folder-open"></i> Ver biblioteca</button>
+                </div>
+                <div class="student-hub-panel">
+                    <div class="student-hub-title">
+                        <span><i class="fas fa-clock-rotate-left"></i> Histórico recente</span>
+                        <button type="button" onclick="window.openGlobalSearch?.()">Buscar</button>
+                    </div>
+                    <ul class="student-history-list">${getHistoryHtml()}</ul>
+                </div>
+            </section>
+        `;
+        updateBreadcrumbs('Perfil');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.openGlobalSearch = function() {
+        const existing = document.getElementById('global-search-modal');
+        if (existing) existing.remove();
+        const items = getSearchItems();
+        const modal = document.createElement('div');
+        modal.id = 'global-search-modal';
+        modal.className = 'global-search-modal';
+        modal.innerHTML = `
+            <div class="global-search-backdrop" data-close-search="true"></div>
+            <section class="global-search-panel">
+                <header>
+                    <div>
+                        <span><i class="fas fa-search"></i> Busca global</span>
+                        <h2>Encontre aulas, ferramentas e materiais</h2>
+                    </div>
+                    <button type="button" data-close-search="true"><i class="fas fa-times"></i></button>
+                </header>
+                <div class="global-search-input-shell">
+                    <i class="fas fa-magnifying-glass"></i>
+                    <input id="global-search-input" type="search" placeholder="Buscar por aula, simulado, ferramenta, protocolo...">
+                </div>
+                <div id="global-search-results" class="global-search-results"></div>
+            </section>
+        `;
+        document.body.appendChild(modal);
+
+        const renderResults = (term = '') => {
+            const normalized = normalizeSearchText(term);
+            const filtered = items.filter(item => {
+                const text = normalizeSearchText(`${item.type} ${item.title} ${item.description}`);
+                return !normalized || text.includes(normalized);
+            }).slice(0, 20);
+            const target = modal.querySelector('#global-search-results');
+            target.innerHTML = filtered.length ? filtered.map((item, index) => `
+                <button type="button" data-result-index="${index}">
+                    <i class="${item.icon}"></i>
+                    <div>
+                        <span>${item.type}</span>
+                        <strong>${escapeHtml(item.title)}</strong>
+                        <small>${escapeHtml(item.description)}</small>
+                    </div>
+                </button>
+            `).join('') : '<p class="global-search-empty">Nada encontrado. Tente outro termo.</p>';
+            target.querySelectorAll('[data-result-index]').forEach((button, index) => {
+                button.addEventListener('click', () => {
+                    const item = filtered[index];
+                    modal.remove();
+                    if (!item) return;
+                    if (item.moduleId) loadModuleContent(item.moduleId);
+                });
+            });
+        };
+
+        modal.querySelectorAll('[data-close-search]').forEach(btn => btn.addEventListener('click', () => modal.remove()));
+        modal.querySelector('#global-search-input')?.addEventListener('input', e => renderResults(e.target.value));
+        renderResults('');
+        setTimeout(() => modal.querySelector('#global-search-input')?.focus(), 50);
+    };
 
     function setupProtection() {
         document.body.style.userSelect = 'none';
@@ -2712,6 +3470,8 @@ if (managerPanelBtn) {
         console.log("🔓 Botão de gestor clicado!");
         openManagerPanel();
     });
+}
+
     // Lógica da busca Admin
 document.getElementById('admin-search-input')?.addEventListener('input', function(e) {
     window.filterAdminTable();
@@ -2724,9 +3484,8 @@ document.getElementById('manager-search-input')?.addEventListener('input', funct
 
 // Ligar o botão de biometria
 document.getElementById('btn-biometric-login')?.addEventListener('click', () => {
-    FirebaseCourse.loginWithBiometrics();
+    window.FirebaseCourse?.loginWithBiometrics?.();
 });
-}
 
 // --- NOVO: Botão Manual de Salvar Progresso (Rodapé) ---
 document.getElementById('manual-sync-btn')?.addEventListener('click', async () => {
@@ -2917,9 +3676,9 @@ document.getElementById('manual-sync-btn')?.addEventListener('click', async () =
         document.getElementById('bottom-nav-home')?.addEventListener('click', goToHomePage);
         document.getElementById('bottom-nav-modules')?.addEventListener('click', openSidebar);
         document.getElementById('bottom-nav-theme')?.addEventListener('click', toggleTheme);
+        document.getElementById('bottom-nav-profile')?.addEventListener('click', () => window.renderStudentProfilePage?.());
         document.getElementById('dark-mode-toggle-desktop')?.addEventListener('click', toggleTheme);
         document.getElementById('focus-mode-toggle')?.addEventListener('click', toggleFocusMode);
-        document.getElementById('bottom-nav-focus')?.addEventListener('click', toggleFocusMode);
         document.getElementById('focus-menu-modules')?.addEventListener('click', openSidebar);
         document.getElementById('focus-menu-exit')?.addEventListener('click', toggleFocusMode);
         document.getElementById('focus-nav-modules')?.addEventListener('click', openSidebar);
@@ -2995,23 +3754,30 @@ document.getElementById('manual-sync-btn')?.addEventListener('click', async () =
             
             const steps = [
                 { 
-                    element: '#accessibility-fab', 
+                    element: isMobile ? '#bottom-nav-modules' : '#desktop-module-container', 
                     popover: { 
-                        title: '1. Acessibilidade', 
-                        description: 'Ajuste o tamanho, a fonte e o espaçamento aqui.', 
-                        side: "left", 
-                        align: 'end' 
+                        title: '1. Onde estudar', 
+                        description: 'Use o Curso para acessar aulas, exercícios e seu progresso.', 
+                        side: isMobile ? "top" : "right", 
+                        align: isMobile ? 'center' : 'start' 
                     } 
                 },
                 { 
                     element: '#iam-ai-launcher', 
                     popover: { 
-                        title: '2. IAM (IA)', 
-                        description: 'Tire dúvidas com a Inteligência Artificial Medeiros.', 
-                        // AJUSTE 1: No celular, o balão fica EM CIMA (top) para não cobrir o rodapé
-                        // No desktop, fica à DIREITA (right)
+                        title: '2. Tire dúvidas com a IAM', 
+                        description: 'Peça resumos, explicações rápidas e ajuda para revisar a aula.', 
                         side: isMobile ? "top" : "right", 
                         align: isMobile ? "center" : "end" 
+                    } 
+                },
+                { 
+                    element: isMobile ? '#bottom-nav-profile' : '#header-subscribe-btn', 
+                    popover: { 
+                        title: '3. Perfil e próximos passos', 
+                        description: 'Veja seu progresso, status, histórico, biblioteca e próximos passos no Perfil.', 
+                        side: isMobile ? "top" : "bottom", 
+                        align: 'center' 
                     } 
                 }
             ];
@@ -3223,6 +3989,7 @@ window.startManagerLogin = function() {
 };
   // VARIÁVEL GLOBAL PARA ARMAZENAR DADOS DO GESTOR TEMPORARIAMENTE
 let managerCachedUsers = [];
+let currentManagerQuickFilter = 'all';
 
 // ============================================================
 // BLOCO CORRIGIDO: GESTÃO DE EQUIPE, FILTRO E PROGRESSO
@@ -3249,6 +4016,12 @@ window.openManagerPanel = function() {
     // Abre o modal
     modal.classList.add("show");
     overlay.classList.add("show");
+    currentManagerQuickFilter = 'all';
+    document.querySelectorAll('[data-manager-filter-btn]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.managerFilterBtn === 'all');
+        btn.classList.toggle('ring-2', false);
+        btn.classList.toggle('ring-blue-500', false);
+    });
 
     if (titleEl) titleEl.textContent = "Gestão de Equipe (Ao Vivo 🔴)";
     
@@ -3346,8 +4119,60 @@ window.filterManagerTable = function() {
         filteredList = filteredList.filter(u => userMatchesSearch(u, input.value));
     }
 
+    filteredList = filteredList.filter(user => {
+        const metrics = getManagerUserMetrics(user);
+        if (currentManagerQuickFilter === 'inactive') return metrics.isInactive;
+        if (currentManagerQuickFilter === 'completed') return metrics.percent >= 100;
+        if (currentManagerQuickFilter === 'noAccess') return metrics.noAccess;
+        if (currentManagerQuickFilter === 'expired') return metrics.isExpired;
+        if (currentManagerQuickFilter === 'premium') return user.status === 'premium';
+        return true;
+    });
+
     renderManagerTable(filteredList);
 };
+
+window.setManagerQuickFilter = function(filter) {
+    currentManagerQuickFilter = filter || 'all';
+    document.querySelectorAll('[data-manager-filter-btn]').forEach(btn => {
+        const active = btn.dataset.managerFilterBtn === currentManagerQuickFilter;
+        btn.classList.toggle('active', active);
+        btn.classList.toggle('ring-2', active);
+        btn.classList.toggle('ring-blue-500', active);
+    });
+    window.filterManagerTable();
+};
+
+function getManagerUserMetrics(u) {
+    const completedArr = Array.isArray(u.completedModules)
+        ? u.completedModules
+        : (u.completedModules && typeof u.completedModules === 'object'
+            ? Object.keys(u.completedModules)
+            : []);
+
+    const userVisibleModules = getVisibleModuleIds(u);
+    const total = userVisibleModules.length || 1;
+    const modulesDone = userVisibleModules.filter(id => completedArr.includes(id)).length;
+    const percent = Math.min(Math.round((modulesDone / total) * 100), 100);
+    const lastLoginDate = toDateFromFirestore(u.last_login);
+    const createdInfo = getAdminCreatedDateInfo(u);
+    const referenceDate = lastLoginDate || createdInfo.date;
+    const daysSinceAccess = referenceDate ? Math.floor((Date.now() - referenceDate.getTime()) / (1000 * 60 * 60 * 24)) : null;
+    const validade = u.acesso_ate ? new Date(u.acesso_ate) : null;
+    const isExpired = Boolean(validade && new Date() > validade);
+    const noAccess = !lastLoginDate;
+    const isInactive = percent < 100 && (noAccess || (daysSinceAccess !== null && daysSinceAccess >= 7) || isExpired);
+
+    return { completedArr, total, modulesDone, percent, lastLoginDate, createdInfo, daysSinceAccess, validade, isExpired, noAccess, isInactive };
+}
+
+function managerWhatsAppLink(phone, name) {
+    const digits = onlyDigits(phone);
+    if (digits.length < 8) return '';
+    const normalized = digits.startsWith('55') ? digits : `55${digits}`;
+    const msg = encodeURIComponent(`Olá, ${name || 'aluno'}! Aqui é da equipe Projeto Bravo Charlie. Vi seu progresso no curso e estou passando para acompanhar sua evolução. Precisa de alguma ajuda?`);
+    return `https://wa.me/${normalized}?text=${msg}`;
+}
 
 // 3. Função de Tabela com Progresso Corrigido
 window.renderManagerTable = function(usersList) {
@@ -3355,31 +4180,21 @@ window.renderManagerTable = function(usersList) {
     if (!tbody) return;
 
     let html = '';
-    let stats = { total: 0, completed: 0, progress: 0, pending: 0 };
+    let stats = { total: 0, completed: 0, progress: 0, pending: 0, inactive: 0, average: 0 };
+    let percentSum = 0;
 
     if (!usersList || usersList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-gray-500 italic">Nenhum aluno encontrado nesta turma.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-500 italic">Nenhum aluno encontrado nesta turma.</td></tr>';
         updateManagerStats(stats);
         return;
     }
 
-        usersList.forEach(u => {
-        // Garante que completedModules venha sempre como array
-        const completedArr = Array.isArray(u.completedModules)
-            ? u.completedModules
-            : (u.completedModules && typeof u.completedModules === 'object'
-                ? Object.keys(u.completedModules)   // caso salvo como objeto {id:true}
-                : []);
-
-        const userVisibleModules = getVisibleModuleIds(u);
-        const total = userVisibleModules.length || 1;
-        const modulesDone = userVisibleModules.filter(id => completedArr.includes(id)).length;
-
-        let percent = 0;
-        if (total > 0) {
-            percent = Math.round((modulesDone / total) * 100);
-        }
-        if (percent > 100) percent = 100;
+    usersList
+        .slice()
+        .sort((a, b) => getManagerUserMetrics(a).percent - getManagerUserMetrics(b).percent)
+        .forEach(u => {
+        const metrics = getManagerUserMetrics(u);
+        const { total, modulesDone, percent, daysSinceAccess, validade, isExpired, noAccess, isInactive } = metrics;
 
         let progressColor = 'bg-gray-300';
         if (percent > 0) progressColor = 'bg-red-500';
@@ -3391,32 +4206,49 @@ window.renderManagerTable = function(usersList) {
         if (percent >= 100) stats.completed++;
         else if (percent > 0) stats.progress++;
         else stats.pending++;
+        if (isInactive) stats.inactive++;
+        percentSum += percent;
 
         const phone = u.phone || 'Não informado';
         const turma = u.company || 'Particular';
+        const whatsapp = managerWhatsAppLink(phone, u.name);
+        const lastAccessText = noAccess
+            ? 'Nunca acessou'
+            : (daysSinceAccess <= 0 ? 'Hoje' : `Há ${daysSinceAccess} dia${daysSinceAccess > 1 ? 's' : ''}`);
+        const createdText = metrics.createdInfo.date ? formatAdminDateTime(metrics.createdInfo.date) : 'Não registrado';
+        const note = u.managerNote || u.adminNote || '';
+        const alertBadge = isExpired
+            ? '<span class="manager-alert danger"><i class="fas fa-ban"></i> vencido</span>'
+            : isInactive
+                ? '<span class="manager-alert warn"><i class="fas fa-triangle-exclamation"></i> parado</span>'
+                : percent >= 100
+                    ? '<span class="manager-alert ok"><i class="fas fa-check"></i> concluído</span>'
+                    : '<span class="manager-alert info"><i class="fas fa-route"></i> acompanhando</span>';
         
         let statusBadge = u.status === 'premium' 
             ? '<span class="px-2 py-1 bg-green-100 text-green-800 text-[10px] rounded font-bold uppercase">PREMIUM</span>' 
             : '<span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-[10px] rounded font-bold uppercase">TRIAL</span>';
 
-        let validadeStr = u.acesso_ate ? new Date(u.acesso_ate).toLocaleDateString('pt-BR') : '-';
+        let validadeStr = validade ? validade.toLocaleDateString('pt-BR') : '-';
 
         html += `
-            <tr class="hover:bg-gray-50 border-b border-gray-100 group transition-colors">
+            <tr class="manager-row hover:bg-gray-50 border-b border-gray-100 group transition-colors ${isInactive ? 'manager-row-alert' : ''}">
                 <td class="px-4 py-3">
-                    <div class="font-bold text-gray-800 text-sm">${u.name || 'Sem Nome'}</div>
-                    <div class="text-xs text-gray-500">${u.email}</div>
+                    <div class="font-bold text-gray-800 text-sm">${escapeHtml(u.name || 'Sem Nome')}</div>
+                    <div class="text-xs text-gray-500">${escapeHtml(u.email || 'Sem e-mail')}</div>
+                    <div class="mt-1">${alertBadge}</div>
                 </td>
                 <td class="px-4 py-3 text-xs text-gray-600">
                     <div class="flex items-center gap-2">
-                        ${phone !== 'Não informado' ? '<i class="fab fa-whatsapp text-green-500"></i>' : ''} ${phone}
-                        <button onclick="editUserPhone('${u.uid}', '${phone}')" class="text-gray-300 hover:text-blue-500 opacity-0 group-hover:opacity-100"><i class="fas fa-pencil-alt"></i></button>
+                        ${phone !== 'Não informado' ? '<i class="fab fa-whatsapp text-green-500"></i>' : ''} ${escapeHtml(phone)}
+                        <button onclick="editUserPhone('${u.uid}', '${escapeJsString(phone)}')" class="text-gray-300 hover:text-blue-500 opacity-0 group-hover:opacity-100"><i class="fas fa-pencil-alt"></i></button>
                     </div>
+                    ${whatsapp ? `<a href="${whatsapp}" target="_blank" rel="noopener" class="manager-whatsapp-link"><i class="fab fa-whatsapp"></i> chamar</a>` : ''}
                 </td>
                 <td class="px-4 py-3">
                     <div class="flex items-center gap-2">
-                        <span class="px-2 py-1 bg-blue-50 text-blue-700 text-[10px] rounded font-bold border border-blue-100 uppercase">${turma}</span>
-                        <button onclick="editUserClass('${u.uid}', '${turma}')" class="text-gray-300 hover:text-blue-500 opacity-0 group-hover:opacity-100"><i class="fas fa-pencil-alt"></i></button>
+                        <span class="px-2 py-1 bg-blue-50 text-blue-700 text-[10px] rounded font-bold border border-blue-100 uppercase">${escapeHtml(turma)}</span>
+                        <button onclick="editUserClass('${u.uid}', '${escapeJsString(turma)}')" class="text-gray-300 hover:text-blue-500 opacity-0 group-hover:opacity-100"><i class="fas fa-pencil-alt"></i></button>
                     </div>
                 </td>
                 <td class="px-4 py-3" title="${modulesDone}/${total}">
@@ -3426,13 +4258,29 @@ window.renderManagerTable = function(usersList) {
                         </div>
                         <span class="text-xs font-bold text-gray-700 w-8 text-right">${percent}%</span>
                     </div>
+                    <div class="text-[11px] text-gray-500 mt-1">${modulesDone}/${total} módulos</div>
                 </td>
-                <td class="px-4 py-3">${statusBadge}</td>
-                <td class="px-4 py-3 text-xs font-mono text-gray-600">${validadeStr}</td>
+                <td class="px-4 py-3 text-xs text-gray-600">
+                    <div><strong>Último acesso:</strong> ${lastAccessText}</div>
+                    <div class="mt-1"><strong>Criado:</strong> ${createdText}</div>
+                    ${note ? `<div class="manager-note mt-2"><i class="fas fa-sticky-note"></i> ${escapeHtml(note)}</div>` : ''}
+                </td>
+                <td class="px-4 py-3">
+                    ${statusBadge}
+                    <div class="text-[11px] text-gray-500 mt-1">Vence: ${validadeStr}</div>
+                </td>
+                <td class="px-4 py-3">
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="openManagerStudentDetails('${u.uid}')" class="manager-action-btn details"><i class="fas fa-eye"></i></button>
+                        <button onclick="editManagerNote('${u.uid}', '${escapeJsString(note)}')" class="manager-action-btn note"><i class="fas fa-pen-to-square"></i></button>
+                        ${whatsapp ? `<a href="${whatsapp}" target="_blank" rel="noopener" class="manager-action-btn whatsapp"><i class="fab fa-whatsapp"></i></a>` : ''}
+                    </div>
+                </td>
             </tr>
         `;
     });
 
+    stats.average = stats.total ? Math.round(percentSum / stats.total) : 0;
     tbody.innerHTML = html;
     updateManagerStats(stats);
 };
@@ -3442,7 +4290,52 @@ function updateManagerStats(stats) {
     if(document.getElementById('mgr-completed')) document.getElementById('mgr-completed').innerText = stats.completed;
     if(document.getElementById('mgr-progress')) document.getElementById('mgr-progress').innerText = stats.progress;
     if(document.getElementById('mgr-pending')) document.getElementById('mgr-pending').innerText = stats.pending;
+    if(document.getElementById('mgr-inactive')) document.getElementById('mgr-inactive').innerText = stats.inactive || 0;
+    if(document.getElementById('mgr-average')) document.getElementById('mgr-average').innerText = `${stats.average || 0}%`;
 }
+
+window.openManagerStudentDetails = function(uid) {
+    const user = (window.managerCachedUsers || []).find(u => u.uid === uid);
+    if (!user) return alert("Aluno não encontrado no painel atual.");
+
+    const metrics = getManagerUserMetrics(user);
+    const lastAccessText = metrics.noAccess
+        ? 'Nunca acessou'
+        : (metrics.daysSinceAccess <= 0 ? 'Hoje' : `Há ${metrics.daysSinceAccess} dia${metrics.daysSinceAccess > 1 ? 's' : ''}`);
+    const validadeStr = metrics.validade ? metrics.validade.toLocaleDateString('pt-BR') : '-';
+    const createdText = metrics.createdInfo.date ? formatAdminDateTime(metrics.createdInfo.date) : 'Não registrado';
+    const note = user.managerNote || user.adminNote || 'Sem observação.';
+
+    alert(
+        `Aluno: ${user.name || 'Sem nome'}\n` +
+        `E-mail: ${user.email || 'Sem e-mail'}\n` +
+        `Telefone: ${user.phone || 'Não informado'}\n` +
+        `Turma: ${user.company || 'Particular'}\n\n` +
+        `Progresso: ${metrics.percent}% (${metrics.modulesDone}/${metrics.total} módulos)\n` +
+        `Status: ${(user.status || 'trial').toUpperCase()}\n` +
+        `Vencimento: ${validadeStr}\n` +
+        `Último acesso: ${lastAccessText}\n` +
+        `Criado em: ${createdText}\n\n` +
+        `Observação:\n${note}`
+    );
+};
+
+window.editManagerNote = async function(uid, currentNote) {
+    const cleanNote = currentNote === 'undefined' ? '' : currentNote;
+    const note = prompt("Observação do gestor para este aluno:", cleanNote);
+    if (note === null) return;
+
+    try {
+        await window.__fbDB.collection('users').doc(uid).update({
+            managerNote: note,
+            managerNoteUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showAppToast('Observação salva', 'A nota do gestor foi atualizada.', 'success');
+    } catch (e) {
+        alert("Erro ao salvar observação: " + e.message);
+    }
+};
+
 // FUNÇÃO DE EDITAR TURMA
 window.editUserClass = async function(uid, oldClass) {
     const newClass = prompt("Digite o novo nome da Turma/Empresa:", oldClass);
