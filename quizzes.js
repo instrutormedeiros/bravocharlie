@@ -4737,84 +4737,84 @@ const QUIZ_DATA = {
 
   "module43": [
         {
-            id: 'm41-q1',
+            id: 'm43-q1',
             question: 'Qual é o objetivo principal do salvamento em alturas?',
             options: { a: 'Apenas utilizar equipamentos modernos.', b: 'Realizar o resgate de vítimas em locais elevados de forma segura, utilizando técnicas e equipamentos adequados.', c: 'Focar apenas na rapidez da operação, independentemente dos riscos.', d: 'Treinar a pressão psicológica dos bombeiros.' },
             answer: 'b',
             explanation: 'O objetivo é a excelência na prestação do serviço, realizando o resgate com segurança e técnica.'
         },
         {
-            id: 'm41-q2',
+            id: 'm43-q2',
             question: 'Por que a capacitação contínua é crucial para os bombeiros?',
             options: { a: 'Para reduzir o custo dos equipamentos.', b: 'Apenas para cumprir exigências burocráticas.', c: 'Garante o domínio das técnicas, o uso correto de equipamentos e a capacidade de lidar com alta pressão.', d: 'Para diminuir a necessidade de planejamento.' },
             answer: 'c',
             explanation: 'A capacitação é essencial para lidar com a pressão psicológica e os riscos inerentes, onde erros são fatais.'
         },
         {
-            id: 'm41-q3',
+            id: 'm43-q3',
             question: 'Quais são os três planos em que o salvamento em alturas pode ser realizado?',
             options: { a: 'Interno, externo e subterrâneo.', b: 'Rápido, lento e moderado.', c: 'Simples, complexo e tático.', d: 'Vertical, inclinado e horizontal.' },
             answer: 'd',
             explanation: 'As operações podem ocorrer em planos verticais (paredes), inclinados (telhados) ou horizontais (pontes).'
         },
         {
-            id: 'm41-q4',
+            id: 'm43-q4',
             question: 'O que é necessário para alcançar a excelência no salvamento em alturas?',
             options: { a: 'Planejamento estruturado, treinamento contínuo e equipamentos modernos.', b: 'Apenas a coragem dos bombeiros.', c: 'Contratar o maior número de profissionais possível.', d: 'Focar em operações de um único tipo.' },
             answer: 'a',
             explanation: 'A excelência baseia-se em planejamento, capacitação e melhoria das condições de trabalho (equipamentos).'
         },
         {
-            id: 'm41-q5',
+            id: 'm43-q5',
             question: 'O salvamento em alturas é uma atividade de qual profissional?',
             options: { a: 'Apenas Policiais.', b: 'Apenas Médicos.', c: 'Bombeiros Profissionais Civis.', d: 'Qualquer pessoa com corda.' },
             answer: 'c',
             explanation: 'O módulo especifica que é uma atividade crítica desempenhada por bombeiros profissionais civis.'
         },
         {
-            id: 'm41-q6',
+            id: 'm43-q6',
             question: 'Um resgate em um telhado é um exemplo de salvamento em plano:',
             options: { a: 'Vertical.', b: 'Horizontal.', c: 'Inclinado.', d: 'Subterrâneo.' },
             answer: 'c',
             explanation: 'Telhados são exemplos de planos inclinados.'
         },
         {
-            id: 'm41-q7',
+            id: 'm43-q7',
             question: 'Um resgate em uma parede de edifício é um exemplo de salvamento em plano:',
             options: { a: 'Vertical.', b: 'Horizontal.', c: 'Inclinado.', d: 'Aéreo.' },
             answer: 'a',
             explanation: 'Paredes de edifícios ou penhascos são exemplos de planos verticais.'
         },
         {
-            id: 'm41-q8',
+            id: 'm43-q8',
             question: 'Um resgate em uma ponte ou plataforma é um exemplo de salvamento em plano:',
             options: { a: 'Vertical.', b: 'Horizontal.', c: 'Inclinado.', d: 'Aquático.' },
             answer: 'b',
             explanation: 'Pontes ou plataformas são exemplos de planos horizontais elevados.'
         },
         {
-            id: 'm41-q9',
+            id: 'm43-q9',
             question: 'Por que a capacitação é importante para a pressão psicológica?',
             options: { a: 'Não é importante, o bombeiro já é treinado.', b: 'Para o bombeiro saber conversar com a vítima.', c: 'Para o bombeiro lidar com os riscos inerentes onde qualquer erro pode ser fatal.', d: 'Para o bombeiro poder relaxar.' },
             answer: 'c',
             explanation: 'A capacitação ajuda o bombeiro a lidar com a pressão psicológica e os riscos fatais da operação.'
         },
         {
-            id: 'm41-q10',
+            id: 'm43-q10',
             question: 'O que este módulo (50) estabelece?',
             options: { a: 'As técnicas de nós.', b: 'A base para os princípios técnicos e táticos dos módulos seguintes.', c: 'Como usar os equipamentos.', d: 'Como falar no rádio.' },
             answer: 'b',
             explanation: 'Este módulo é introdutório e estabelece a base para os princípios técnicos e táticos futuros.'
         },
         {
-            id: 'm41-q11',
+            id: 'm43-q11',
             question: 'As técnicas de salvamento em altura NÃO envolvem qual dos seguintes?',
             options: { a: 'Ancoragens seguras.', b: 'Sistemas de descensão.', c: 'Improvisação como regra principal.', d: 'Sistemas de içamento.' },
             answer: 'c',
             explanation: 'O salvamento em altura exige planejamento meticuloso e técnicas avançadas, evitando a improvisação.'
         },
         {
-            id: 'm41-q12',
+            id: 'm43-q12',
             question: 'A busca por eficiência e segurança no salvamento em alturas visa:',
             options: { a: 'Economizar cordas.', b: 'Alcançar a excelência na prestação de serviços à sociedade.', c: 'Terminar o serviço mais rápido para ir embora.', d: 'Aparecer na mídia.' },
             answer: 'b',
@@ -5652,7 +5652,7 @@ const QUIZ_DATA = {
         { id: 'sp-m4-q2', question: 'Quantos ciclos de RCP devem ser feitos antes de reavaliar ou trocar de socorrista?', options: { a: '1 ciclo.', b: '2 ciclos.', c: '5 ciclos (aprox. 2 minutos).', d: '10 ciclos.' }, answer: 'c', explanation: 'A cada 5 ciclos de 30x2, deve-se checar sinais vitais ou realizar o rodízio de socorristas.' },
         { id: 'sp-m4-q3', question: 'Qual é o "Sinal Universal de Asfixia" (OVACE)?', options: { a: 'Mãos na barriga.', b: 'Mãos no pescoço (segurando com polegar e indicador).', c: 'Mãos na cabeça.', d: 'Desmaio imediato.' }, answer: 'b', explanation: 'O gesto instintivo da vítima de levar as mãos à garganta indicando sufocamento.' },
         { id: 'sp-m4-q4', question: 'Qual a manobra correta para desengasgar um LACTENTE (bebê)?', options: { a: 'Abraço por trás (Heimlich padrão).', b: '5 batidas nas costas (tapotagem) e 5 compressões no peito.', c: 'Dar água para beber.', d: 'Virar de cabeça para baixo e sacudir pelas pernas.' }, answer: 'b', explanation: 'Técnica específica para bebês: tapotagem nas costas e compressão torácica frontal.' },
-        { id: 'sp-m4-q5', question: 'Em caso de uso de torniquete, ele deve ser afrouxado a cada quanto tempo?', options: { a: '1 hora.', b: '30 minutos.', c: '12 minutos.', d: 'Não se deve afrouxar nunca.' }, answer: 'c', explanation: 'Para permitir a perfusão sanguínea e evitar necrose excessiva do membro.' },
+        { id: 'sp-m4-q5', question: 'Em caso de uso de torniquete em hemorragia grave, qual é a conduta correta após a aplicação?', options: { a: 'Afrouxar a cada 1 hora.', b: 'Afrouxar a cada 30 minutos.', c: 'Afrouxar a cada 12 minutos.', d: 'Não afrouxar nem remover; registrar o horário e aguardar suporte adequado.' }, answer: 'd', explanation: 'Após controlar a hemorragia grave com torniquete, ele não deve ser afrouxado ou removido por leigo/socorrista no atendimento inicial. Registre o horário e encaminhe para suporte adequado.' },
         { id: 'sp-m4-q6', question: 'Quais são os sinais clássicos de Parada Cardiorrespiratória (PCR)?', options: { a: 'Gritos de dor.', b: 'Tosse e espirro.', c: 'Inconsciência, Apneia/Gasping e Ausência de circulação.', d: 'Febre alta e suor frio.' }, answer: 'c', explanation: 'A tríade clássica: vítima não responde, não respira (ou gasping) e não tem pulso.' },
         { id: 'sp-m4-q7', question: 'O que é Gasping?', options: { a: 'Respiração normal.', b: 'Respiração agônica, ineficaz e involuntária.', c: 'Vômito.', d: 'Tosse com sangue.' }, answer: 'b', explanation: 'É um movimento respiratório reflexo do tronco cerebral, sinal de parada cardíaca.' },
         { id: 'sp-m4-q8', question: 'Em qual destas situações NÃO se deve iniciar a RCP (Sinais de Morte Evidente)?', options: { a: 'Vítima pálida.', b: 'Vítima idosa.', c: 'Decapitação, Carbonização ou Rigor Mortis.', d: 'Vítima sangrando muito.' }, answer: 'c', explanation: 'São lesões ou estados incompatíveis com a vida, onde a reanimação é inútil.' },

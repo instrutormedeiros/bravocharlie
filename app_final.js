@@ -62,6 +62,21 @@ const getAdminCreatedDateInfo = (user) => {
 
 let currentAdminQuickFilter = 'all';
 
+function openPaymentModal() {
+    const expiredModal = document.getElementById('expired-modal');
+    const loginModalOverlay = document.getElementById('name-modal-overlay');
+    const loginModal = document.getElementById('name-prompt-modal');
+
+    expiredModal?.classList.add('show');
+    loginModalOverlay?.classList.add('show');
+    if (loginModal && loginModal.classList.contains('show')) {
+        loginModal.classList.remove('show');
+        loginModal.dataset.wasOpen = 'true';
+    }
+}
+
+window.openPaymentModal = openPaymentModal;
+
 const userMatchesSearch = (user, searchTerm) => {
     const term = normalizeSearchText(searchTerm);
     const termDigits = onlyDigits(searchTerm);
@@ -180,6 +195,7 @@ document.body.addEventListener('input', (e) => {
     let activeSimuladoQuestions = [];
     let userAnswers = {};
     let currentSimuladoQuestionIndex = 0; 
+    let activeSimuladoModuleData = null;
 
     // --- VARIÁVEIS PARA MODO SOBREVIVÊNCIA ---
     let survivalLives = 3;
@@ -222,6 +238,12 @@ document.body.addEventListener('input', (e) => {
         if (toastContainer) toastContainer.appendChild(toast);
         setTimeout(() => toast.remove(), 4500);
     }
+
+    function isInstructorAdmin(userData = currentUserData) {
+        const email = (userData?.email || '').toLowerCase();
+        return !!userData && (userData.isAdmin === true || userData.role === 'admin' || email === 'coordenadormedeiros@gmail.com');
+    }
+    window.isInstructorAdmin = isInstructorAdmin;
 
     const OPTIONAL_PROGRESS_CATEGORIES = ['simulados', 'bonus'];
 
@@ -858,17 +880,98 @@ document.body.addEventListener('input', (e) => {
         `;
     }
 
+    function hasPremiumMediaAccess() {
+        return currentUserData?.status === 'premium' || currentUserData?.isAdmin === true || currentUserData?.isManager === true;
+    }
+
+    function hasIamPremiumAccess() {
+        return currentUserData?.status === 'premium' || currentUserData?.isAdmin === true || currentUserData?.isManager === true || currentUserData?.role === 'admin' || currentUserData?.courseType === 'GESTOR' || isInstructorAdmin(currentUserData);
+    }
+
+    window.openSubscriptionModalFromPremium = function() {
+        const payModal = document.getElementById('expired-modal');
+        const overlay = document.getElementById('name-modal-overlay');
+        if (payModal) payModal.classList.add('show');
+        if (overlay) overlay.classList.add('show');
+    };
+
+    window.openIamPremiumGate = function() {
+        const existing = document.getElementById('iam-premium-gate');
+        if (existing) existing.remove();
+        const modal = document.createElement('div');
+        modal.id = 'iam-premium-gate';
+        modal.className = 'iam-premium-gate';
+        modal.innerHTML = `
+            <div class="iam-premium-backdrop" data-close-iam-gate="true"></div>
+            <section class="iam-premium-card" role="dialog" aria-modal="true" aria-label="IAM exclusivo para assinantes">
+                <button type="button" class="iam-premium-close" data-close-iam-gate="true" aria-label="Fechar"><i class="fas fa-times"></i></button>
+                <div class="iam-premium-icon">
+                    <i class="fas fa-shield-alt"></i>
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <span>IAM premium</span>
+                <h2>Inteligência Artificial exclusiva para assinantes</h2>
+                <p>A IAM ajuda a tirar dúvidas, criar resumos, revisar conteúdos e acelerar sua preparação dentro da plataforma.</p>
+                <div class="iam-premium-stats">
+                    <article><strong>+80%</strong><small>mais aprovação entre assinantes</small></article>
+                    <article><strong>+60%</strong><small>mais chance de notas máximas</small></article>
+                    <article><strong>+35%</strong><small>mais chance em entrevistas</small></article>
+                </div>
+                <button type="button" class="iam-premium-subscribe" onclick="document.getElementById('iam-premium-gate')?.remove(); openSubscriptionModalFromPremium();">
+                    <i class="fas fa-gem"></i> Assinar e liberar IAM
+                </button>
+            </section>
+        `;
+        modal.addEventListener('click', (event) => {
+            if (event.target.closest('[data-close-iam-gate="true"]')) modal.remove();
+        });
+        document.body.appendChild(modal);
+    };
+
+    function getLockedMediaHtml(typeLabel, icon) {
+        return `
+            <div class="lesson-premium-locked-box" aria-label="${typeLabel} bloqueado para assinantes">
+                <div class="lesson-premium-blur">
+                    <i class="fas ${icon}"></i>
+                    <span>${typeLabel}</span>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                </div>
+                <div class="lesson-premium-lock-overlay">
+                    <span><i class="fas fa-lock"></i> Exclusivo para assinantes</span>
+                    <strong>Desbloqueie este material premium</strong>
+                    <button type="button" onclick="openSubscriptionModalFromPremium()">
+                        <i class="fas fa-gem"></i> Assinar e liberar
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    function getPremiumResultsProofHtml() {
+        return `
+            <div class="lesson-premium-proof" aria-label="Resultados de alunos assinantes">
+                <article><strong>+80%</strong><span>maior taxa de aprovação entre alunos assinantes</span></article>
+                <article><strong>+60%</strong><span>mais probabilidade de notas máximas em provas</span></article>
+                <article><strong>+35%</strong><span>mais chances em entrevistas mantendo a assinatura após o curso</span></article>
+            </div>
+        `;
+    }
+
     function getModuleMediaHtml(id, title) {
         const media = getModuleMediaAssets(id);
         if (!media) return '';
+        const unlocked = hasPremiumMediaAccess();
 
         return `
-            <section class="lesson-media-suite" aria-label="Materiais da aula">
+            <section class="lesson-media-suite ${unlocked ? 'premium-unlocked' : 'premium-locked'}" aria-label="Materiais da aula">
                 <div class="lesson-media-heading">
                     <span><i class="fas fa-layer-group"></i> Materiais premium da aula</span>
-                    <h4>Revise a aula com vídeo, podcast e slides</h4>
-                    <p>Conteúdo complementar organizado para reforçar ${title.replace(/^\d+\.\s*/, '')} depois da leitura e dos exercícios.</p>
+                    <h4>${unlocked ? 'Revise a aula com vídeo, podcast e slides' : 'Materiais premium disponíveis para assinantes'}</h4>
+                    <p>${unlocked ? `Conteúdo complementar organizado para reforçar ${title.replace(/^\d+\.\s*/, '')} depois da leitura e dos exercícios.` : 'Os materiais aparecem aqui para você saber o que está disponível. A reprodução é liberada automaticamente para alunos assinantes.'}</p>
                 </div>
+                ${getPremiumResultsProofHtml()}
                 <div class="lesson-media-grid">
                     <article class="lesson-media-card lesson-video-card">
                         <div class="lesson-media-card-title">
@@ -878,7 +981,7 @@ document.body.addEventListener('input', (e) => {
                                 <span>Explicação completa em formato visual</span>
                             </div>
                         </div>
-                        ${getVideoEmbedHtml(media.video)}
+                        ${unlocked ? getVideoEmbedHtml(media.video) : getLockedMediaHtml('Vídeo da aula', 'fa-circle-play')}
                     </article>
                     <article class="lesson-media-card lesson-podcast-card">
                         <div class="lesson-media-card-title">
@@ -888,7 +991,7 @@ document.body.addEventListener('input', (e) => {
                                 <span>Resumo para ouvir no deslocamento</span>
                             </div>
                         </div>
-                        ${getPodcastEmbedHtml(media.podcast)}
+                        ${unlocked ? getPodcastEmbedHtml(media.podcast) : getLockedMediaHtml('Podcast da aula', 'fa-podcast')}
                     </article>
                     <article class="lesson-media-card lesson-image-card">
                         <div class="lesson-media-card-title">
@@ -898,7 +1001,7 @@ document.body.addEventListener('input', (e) => {
                                 <span>Mapa visual dos pontos principais</span>
                             </div>
                         </div>
-                        ${getImageEmbedHtml(media.image)}
+                        ${unlocked ? getImageEmbedHtml(media.image) : getLockedMediaHtml('Infográfico premium', 'fa-chart-simple')}
                     </article>
                     <article class="lesson-media-card lesson-pdf-card">
                         <div class="lesson-media-card-title">
@@ -908,7 +1011,7 @@ document.body.addEventListener('input', (e) => {
                                 <span>Material para leitura e revisão</span>
                             </div>
                         </div>
-                        ${getPdfEmbedHtml(media.pdf)}
+                        ${unlocked ? getPdfEmbedHtml(media.pdf) : getLockedMediaHtml('Slides da apresentação', 'fa-file-powerpoint')}
                     </article>
                 </div>
             </section>
@@ -1148,6 +1251,9 @@ setTimeout(() => {
         } else {
             currentUserData = userData;
         }
+        if (isInstructorAdmin(currentUserData)) currentUserData.isAdmin = true;
+
+        checkTrialStatus(currentUserData?.acesso_ate);
 
         if (document.body.getAttribute('data-app-ready') === 'true') return;
         
@@ -1166,20 +1272,23 @@ setTimeout(() => {
         // Admin e Gestor Buttons
         const adminBtn = document.getElementById('admin-panel-btn');
         const mobileAdminBtn = document.getElementById('mobile-admin-btn');
+        const instructorBtn = document.getElementById('instructor-panel-btn');
+        const mobileInstructorBtn = document.getElementById('mobile-instructor-btn');
         const managerFab = document.getElementById("manager-fab");
         const iamWidget = document.getElementById('iam-ai-widget');
+        const userIsAdmin = isInstructorAdmin(currentUserData);
 
         if (iamWidget) iamWidget.classList.remove('hidden');
 
-        if (userData.isAdmin === true) {
+        if (userIsAdmin) {
             if(adminBtn) adminBtn.classList.remove('hidden');
             if(mobileAdminBtn) mobileAdminBtn.classList.remove('hidden');
+            if(instructorBtn) instructorBtn.classList.remove('hidden');
+            if(mobileInstructorBtn) mobileInstructorBtn.classList.remove('hidden');
         }
-        if (userData.isManager === true || userData.isAdmin === true) {
+        if (userData.isManager === true || userIsAdmin) {
             if (managerFab) managerFab.classList.remove("hidden");
         }
-
-        checkTrialStatus(userData.acesso_ate);
 
         // --- PROGRESSO SINCRONIZADO (CORRIGIDO) ---
         // Se o usuário tem dados na nuvem, usa a nuvem (Prioridade Máxima)
@@ -1223,6 +1332,255 @@ setTimeout(() => {
         document.body.setAttribute('data-app-ready', 'true');
 
     }
+
+let instructorTimerInterval = null;
+let instructorTimerTotal = 600;
+let instructorTimerLeft = 600;
+let instructorClockInterval = null;
+let commandPanelScrollY = 0;
+
+function hasOpenCommandPanel() {
+    return ['admin-modal', 'manager-modal', 'instructor-modal'].some(id => document.getElementById(id)?.classList.contains('show'));
+}
+
+function lockCommandPanelScroll() {
+    if (document.body.classList.contains('command-panel-open')) return;
+    commandPanelScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+    document.body.dataset.commandPanelScrollY = String(commandPanelScrollY);
+    document.body.style.top = `-${commandPanelScrollY}px`;
+    document.body.classList.add('command-panel-open');
+}
+
+function unlockCommandPanelScroll() {
+    if (hasOpenCommandPanel()) return;
+    const savedY = Number(document.body.dataset.commandPanelScrollY || commandPanelScrollY || 0);
+    document.body.classList.remove('command-panel-open');
+    document.body.style.top = '';
+    delete document.body.dataset.commandPanelScrollY;
+    window.scrollTo(0, savedY);
+}
+
+function openCommandPanel(modal, overlay) {
+    lockCommandPanelScroll();
+    modal?.classList.add('show');
+    overlay?.classList.add('show');
+    modal?.scrollTo?.({ top: 0, behavior: 'auto' });
+    modal?.querySelector?.('.overflow-y-auto, .instructor-modal-body')?.scrollTo?.({ top: 0, behavior: 'auto' });
+}
+
+function closeCommandPanel(modal, overlay) {
+    modal?.classList.remove('show');
+    if (!hasOpenCommandPanel()) {
+        overlay?.classList.remove('show');
+        unlockCommandPanelScroll();
+    }
+}
+
+function formatInstructorTime(seconds) {
+    const safe = Math.max(0, Number(seconds) || 0);
+    const min = Math.floor(safe / 60).toString().padStart(2, '0');
+    const sec = Math.floor(safe % 60).toString().padStart(2, '0');
+    return `${min}:${sec}`;
+}
+
+function updateInstructorTimerUi() {
+    const display = document.getElementById('instructor-timer-display');
+    const bar = document.getElementById('instructor-timer-bar');
+    if (display) display.textContent = formatInstructorTime(instructorTimerLeft);
+    if (bar) {
+        const percent = instructorTimerTotal ? Math.max(0, Math.min(100, (instructorTimerLeft / instructorTimerTotal) * 100)) : 0;
+        bar.style.width = `${percent}%`;
+    }
+}
+
+function renderInstructorAttendance() {
+    const list = document.getElementById('instructor-attendance-list');
+    if (!list) return;
+    const names = JSON.parse(localStorage.getItem('instructor_attendance_v1') || '[]');
+    list.innerHTML = names.length
+        ? names.map((name, index) => `<span>${escapeHtml(name)} <button onclick="removeInstructorAttendance(${index})" title="Remover"><i class="fas fa-times"></i></button></span>`).join('')
+        : '<p>Nenhum aluno registrado ainda.</p>';
+}
+
+function updateInstructorClock() {
+    const clock = document.getElementById('instructor-clock-time');
+    if (!clock) return;
+    clock.textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+window.openInstructorPanel = function() {
+    if (!isInstructorAdmin()) {
+        showAppToast('Acesso restrito', 'Este painel é apenas para administrador.', 'warning');
+        return;
+    }
+    const modal = document.getElementById('instructor-modal');
+    const overlay = document.getElementById('admin-modal-overlay');
+    if (!modal || !overlay) return;
+    document.getElementById('instructor-class-plan').value = localStorage.getItem('instructor_class_plan_v1') || '';
+    openCommandPanel(modal, overlay);
+    updateInstructorTimerUi();
+    renderInstructorAttendance();
+    updateInstructorClock();
+    clearInterval(instructorClockInterval);
+    instructorClockInterval = setInterval(updateInstructorClock, 15000);
+};
+
+window.closeInstructorPanel = function() {
+    const modal = document.getElementById('instructor-modal');
+    const overlay = document.getElementById('admin-modal-overlay');
+    closeCommandPanel(modal, overlay);
+    clearInterval(instructorClockInterval);
+};
+
+window.startInstructorTimer = function() {
+    const input = document.getElementById('instructor-timer-min');
+    if (!instructorTimerLeft || instructorTimerLeft === instructorTimerTotal) {
+        const minutes = Math.max(1, Math.min(180, Number(input?.value) || 10));
+        instructorTimerTotal = minutes * 60;
+        instructorTimerLeft = instructorTimerTotal;
+    }
+    clearInterval(instructorTimerInterval);
+    instructorTimerInterval = setInterval(() => {
+        instructorTimerLeft = Math.max(0, instructorTimerLeft - 1);
+        updateInstructorTimerUi();
+        if (instructorTimerLeft <= 0) {
+            clearInterval(instructorTimerInterval);
+            showAppToast('Tempo encerrado', 'O timer do instrutor chegou ao fim.', 'warning');
+        }
+    }, 1000);
+    updateInstructorTimerUi();
+};
+
+window.pauseInstructorTimer = function() {
+    clearInterval(instructorTimerInterval);
+};
+
+window.resetInstructorTimer = function() {
+    clearInterval(instructorTimerInterval);
+    const input = document.getElementById('instructor-timer-min');
+    const minutes = Math.max(1, Math.min(180, Number(input?.value) || 10));
+    instructorTimerTotal = minutes * 60;
+    instructorTimerLeft = instructorTimerTotal;
+    updateInstructorTimerUi();
+};
+
+window.sortInstructorStudent = function() {
+    const raw = document.getElementById('instructor-student-list')?.value || '';
+    const names = raw.split('\n').map(n => n.trim()).filter(Boolean);
+    const result = document.getElementById('instructor-student-result');
+    if (!names.length) {
+        if (result) result.textContent = 'Cole pelo menos um nome para sortear.';
+        return;
+    }
+    const picked = names[Math.floor(Math.random() * names.length)];
+    if (result) result.innerHTML = `<strong>${escapeHtml(picked)}</strong><small>Aluno sorteado para participar.</small>`;
+};
+
+window.addInstructorAttendance = function() {
+    const input = document.getElementById('instructor-attendance-name');
+    const value = input?.value.trim();
+    if (!value) return;
+    const names = JSON.parse(localStorage.getItem('instructor_attendance_v1') || '[]');
+    names.push(value);
+    localStorage.setItem('instructor_attendance_v1', JSON.stringify(names));
+    input.value = '';
+    renderInstructorAttendance();
+};
+
+window.removeInstructorAttendance = function(index) {
+    const names = JSON.parse(localStorage.getItem('instructor_attendance_v1') || '[]');
+    names.splice(index, 1);
+    localStorage.setItem('instructor_attendance_v1', JSON.stringify(names));
+    renderInstructorAttendance();
+};
+
+window.copyInstructorAttendance = async function() {
+    const names = JSON.parse(localStorage.getItem('instructor_attendance_v1') || '[]');
+    const text = `Chamada - ${new Date().toLocaleDateString('pt-BR')}\n${names.map((n, i) => `${i + 1}. ${n}`).join('\n')}`;
+    try {
+        await navigator.clipboard.writeText(text);
+        showAppToast('Chamada copiada', 'A lista foi copiada para a área de transferência.', 'success');
+    } catch (e) {
+        showAppToast('Não foi possível copiar', 'Selecione e copie manualmente se necessário.', 'warning');
+    }
+};
+
+window.saveInstructorPlan = function() {
+    const value = document.getElementById('instructor-class-plan')?.value || '';
+    localStorage.setItem('instructor_class_plan_v1', value);
+    showAppToast('Roteiro salvo', 'Este roteiro ficou salvo neste dispositivo.', 'success');
+};
+
+window.copyInstructorPlan = async function() {
+    const value = document.getElementById('instructor-class-plan')?.value || '';
+    try {
+        await navigator.clipboard.writeText(value);
+        showAppToast('Roteiro copiado', 'O plano da aula foi copiado.', 'success');
+    } catch (e) {
+        showAppToast('Não foi possível copiar', 'Tente copiar manualmente.', 'warning');
+    }
+};
+
+window.generateInstructorQuestion = function() {
+    const questions = [
+        'Qual foi o ponto mais importante da aula até agora?',
+        'Que atitude profissional você tomaria nesse cenário?',
+        'Qual erro operacional precisamos evitar nessa situação?',
+        'Explique esse conceito como se estivesse orientando um colega novo.',
+        'Qual procedimento vem primeiro e por quê?',
+        'O que você registraria no relatório depois dessa ocorrência?'
+    ];
+    const box = document.getElementById('instructor-question-result');
+    if (box) box.innerHTML = `<strong>${questions[Math.floor(Math.random() * questions.length)]}</strong><small>Use como pergunta rápida para a turma.</small>`;
+};
+
+window.publishInstructorAnnouncement = async function() {
+    if (!isInstructorAdmin()) return;
+    const title = document.getElementById('instructor-ann-title')?.value.trim();
+    const message = document.getElementById('instructor-ann-message')?.value.trim();
+    const target = document.getElementById('instructor-ann-target')?.value || 'all';
+    const targetValue = document.getElementById('instructor-ann-target-value')?.value.trim();
+    if (!title || !message) {
+        showAppToast('Comunicado incompleto', 'Preencha título e mensagem antes de publicar.', 'warning');
+        return;
+    }
+    if (target !== 'all' && !targetValue) {
+        showAppToast('Informe o público', 'Preencha o filtro para turma, status, curso ou e-mail.', 'warning');
+        return;
+    }
+    const item = {
+        id: String(Date.now()),
+        title,
+        message,
+        target,
+        targetValue,
+        expire: '',
+        readBy: {},
+        createdAtLocal: new Date().toISOString()
+    };
+    const db = window.__fbDB || window.fbDB;
+    try {
+        if (db && window.firebase) {
+            await db.collection('announcements').add({
+                ...item,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                createdBy: currentUserData?.uid || null
+            });
+        } else {
+            const local = JSON.parse(localStorage.getItem('tool_announcements_v1') || '[]');
+            local.unshift(item);
+            localStorage.setItem('tool_announcements_v1', JSON.stringify(local));
+        }
+        document.getElementById('instructor-ann-title').value = '';
+        document.getElementById('instructor-ann-message').value = '';
+        document.getElementById('instructor-ann-target-value').value = '';
+        window.ToolsApp?.refreshAnnouncements?.();
+        showAppToast('Aviso publicado', 'O comunicado foi enviado para o público escolhido.', 'success');
+    } catch (error) {
+        console.error(error);
+        showAppToast('Erro ao publicar', 'Não consegui salvar o comunicado agora.', 'error');
+    }
+};
     
 // --- FUNÇÕES ADMIN (ATUALIZADAS E LEGÍVEIS) ---
 window.openAdminPanel = async function() {
@@ -1231,8 +1589,7 @@ window.openAdminPanel = async function() {
     const adminModal = document.getElementById('admin-modal');
     const adminOverlay = document.getElementById('admin-modal-overlay');
     
-    adminModal.classList.add('show');
-    adminOverlay.classList.add('show');
+    openCommandPanel(adminModal, adminOverlay);
 
     const tbody = document.getElementById('admin-table-body');
     tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center">Carregando usuários...</td></tr>';
@@ -1533,27 +1890,73 @@ window.manageUserAccess = async function(uid) {
     };
     
     function checkTrialStatus(expiryDateString) {
-        const expiryDate = new Date(expiryDateString);
+        const trialToast = document.getElementById('trial-floating-notify');
+        if (!trialToast) return;
+
+        const hideTrialNotice = () => {
+            trialToast.classList.add('hidden');
+            const daysLeftSpan = document.getElementById('trial-days-left');
+            if (daysLeftSpan) daysLeftSpan.textContent = '';
+        };
+        const isPrivilegedUser =
+            currentUserData?.status === 'premium' ||
+            currentUserData?.isAdmin === true ||
+            currentUserData?.isManager === true ||
+            currentUserData?.role === 'admin' ||
+            currentUserData?.courseType === 'GESTOR' ||
+            isInstructorAdmin(currentUserData);
+
+        if (isPrivilegedUser || sessionStorage.getItem('trial_notice_dismissed') === 'true' || !expiryDateString) {
+            hideTrialNotice();
+            return;
+        }
+
+        const expiryDate = toDateFromFirestore(expiryDateString);
+        if (!expiryDate) {
+            hideTrialNotice();
+            return;
+        }
+
         const today = new Date();
         const diffTime = expiryDate - today; 
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-        const trialToast = document.getElementById('trial-floating-notify');
         const daysLeftSpan = document.getElementById('trial-days-left');
         const trialBtn = document.getElementById('trial-subscribe-btn');
         const closeTrialBtn = document.getElementById('close-trial-notify');
         const trialTitle = document.getElementById('trial-title-text');
 
-        if (trialToast && diffDays <= 30 && diffDays >= 0) {
+        if (Number.isFinite(diffDays) && diffDays <= 30 && diffDays >= 0) {
+            if(daysLeftSpan) daysLeftSpan.textContent = `${diffDays} dia${diffDays === 1 ? '' : 's'}`;
+            if(trialTitle) trialTitle.textContent = "Seu acesso termina em breve";
+            if (trialBtn) trialBtn.onclick = () => {
+                if (typeof window.openPaymentModal === 'function') {
+                    window.openPaymentModal();
+                    return;
+                }
+
+                document.getElementById('expired-modal')?.classList.add('show');
+                document.getElementById('name-modal-overlay')?.classList.add('show');
+            };
+            if (closeTrialBtn) closeTrialBtn.onclick = (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                sessionStorage.setItem('trial_notice_dismissed', 'true');
+                hideTrialNotice();
+            };
             trialToast.classList.remove('hidden');
-            if(daysLeftSpan) daysLeftSpan.textContent = diffDays;
-            if(trialTitle) trialTitle.textContent = "Período de Experiência";
-            trialBtn?.addEventListener('click', () => {
-                document.getElementById('expired-modal').classList.add('show');
-                document.getElementById('name-modal-overlay').classList.add('show');
-            });
-            closeTrialBtn?.addEventListener('click', () => { trialToast.classList.add('hidden'); });
+        } else {
+            hideTrialNotice();
         }
     }
+
+    document.addEventListener('click', (event) => {
+        const closeTrialBtn = event.target.closest?.('#close-trial-notify');
+        if (!closeTrialBtn) return;
+        event.preventDefault();
+        event.stopPropagation();
+        sessionStorage.setItem('trial_notice_dismissed', 'true');
+        document.getElementById('trial-floating-notify')?.classList.add('hidden');
+    }, true);
 
 // --- 1. ATUALIZAÇÃO DA FUNÇÃO DE EVENTOS DE AUTENTICAÇÃO ---
     // Substitua a função setupAuthEventListeners inteira por esta:
@@ -1615,14 +2018,6 @@ window.manageUserAccess = async function(uid) {
         });
 
         // ... (Lógica do Modal de Pagamento mantida) ...
-        function openPaymentModal() {
-            expiredModal.classList.add('show');
-            if (loginModalOverlay) loginModalOverlay.classList.add('show');
-            if (loginModal && loginModal.classList.contains('show')) {
-                loginModal.classList.remove('show');
-                loginModal.dataset.wasOpen = 'true'; 
-            }
-        }
         btnOpenPayHeader?.addEventListener('click', openPaymentModal);
         btnOpenPayMobile?.addEventListener('click', openPaymentModal);
         btnOpenPayLogin?.addEventListener('click', openPaymentModal);
@@ -2296,6 +2691,7 @@ window.manageUserAccess = async function(uid) {
 
    // === FUNÇÕES SIMULADO (NORMAL - SEM MODO FOCO) ===
     async function startSimuladoMode(moduleData) {
+        activeSimuladoModuleData = moduleData;
         // Pausar áudio se estiver tocando (Pedido 2 - parte A)
         if (window.speechSynthesis.speaking) {
             window.speechSynthesis.cancel();
@@ -2319,6 +2715,7 @@ window.manageUserAccess = async function(uid) {
                     <span id="timer-display" class="timer-text mx-2">--:--</span>
                     <div class="h-4 w-px bg-gray-600 mx-2"></div>
                     <span class="text-xs text-gray-300">Questão <span id="q-current">1</span>/${activeSimuladoQuestions.length}</span>
+                    <span id="sim-answer-status" class="sim-answer-status"><i class="fas fa-circle"></i> Aguardando resposta</span>
                 </div>
                 
                 <div class="simulado-pro-hero">
@@ -2400,21 +2797,45 @@ window.manageUserAccess = async function(uid) {
             nextBtn.innerHTML = 'Próxima <i class="fas fa-arrow-right ml-2"></i>';
             nextBtn.className = "sim-nav-btn sim-next-btn";
         }
+        updateSimuladoSelectionStatus(savedAnswer);
     }
 
     // Função auxiliar para selecionar a opção visualmente
     window.selectSimuladoOption = function(index, key, element) {
         // Remove seleção anterior
         const parent = element.parentElement;
-        parent.querySelectorAll('.quiz-card-option').forEach(el => el.classList.remove('selected'));
+        parent.querySelectorAll('.quiz-card-option').forEach(el => {
+            el.classList.remove('selected', 'just-selected');
+            el.querySelector('.sim-selected-check')?.remove();
+        });
         // Adiciona à atual
         element.classList.add('selected');
+        element.classList.add('just-selected');
+        element.insertAdjacentHTML('beforeend', '<span class="sim-selected-check"><i class="fas fa-check"></i> Selecionada</span>');
+        setTimeout(() => element.classList.remove('just-selected'), 650);
         // Salva resposta usando o ÍNDICE
         registerSimuladoAnswer(index, key);
+        updateSimuladoSelectionStatus(key);
     };
 
     window.registerSimuladoAnswer = function(index, answer) {
         userAnswers[index] = answer; // Salva na posição 0, 1, 2...
+    };
+
+    function updateSimuladoSelectionStatus(answer) {
+        const status = document.getElementById('sim-answer-status');
+        if (!status) return;
+        if (answer) {
+            status.classList.add('answered');
+            status.innerHTML = `<i class="fas fa-check-circle"></i> Resposta ${String(answer).toUpperCase()} selecionada`;
+        } else {
+            status.classList.remove('answered');
+            status.innerHTML = '<i class="fas fa-circle"></i> Aguardando resposta';
+        }
+    }
+
+    window.restartCurrentSimulado = function() {
+        if (activeSimuladoModuleData) startSimuladoMode(activeSimuladoModuleData);
     };
 
     function navigateSimulado(direction, moduleId) {
@@ -2508,27 +2929,43 @@ window.manageUserAccess = async function(uid) {
 
         const score = (correctCount / total) * 10;
         const percentage = (correctCount / total) * 100;
+        const note = score.toFixed(1).replace('.', ',');
+        const unanswered = total - Object.keys(userAnswers).length;
+        const wrongCount = total - correctCount;
+        const resultTitle = score >= 9 ? 'Excelente resultado' : score >= 7 ? 'Bom resultado' : score >= 5 ? 'Você está no caminho' : 'Vamos reforçar e tentar de novo';
+        const retryMessage = score >= 10 ? 'Nota 10. Agora revise o gabarito para consolidar.' : 'Vamos de novo? Dessa vez acredito que vai tirar 10.';
 
         const finalHtml = `
-            <div class="text-center animate-slide-in">
-                <h2 class="text-3xl font-serif font-bold mb-6 text-blue-900 dark:text-white">Resultado Final</h2>
-                
-                <div class="circle-chart" style="--percentage: ${percentage}" data-score="${score.toFixed(1)}"></div>
-                
-                <p class="text-gray-600 dark:text-gray-300 mb-2">Você acertou <strong>${correctCount}</strong> de <strong>${total}</strong> questões (${percentage.toFixed(0)}%).</p>
-                
-                <div class="w-full max-w-md mx-auto bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-8 overflow-hidden">
-                    <div class="bg-blue-600 h-2 rounded-full" style="width: ${percentage}%"></div>
+            <div class="simulado-result-page animate-slide-in">
+                <section class="simulado-score-dashboard">
+                    <div class="simulado-score-main">
+                        <span><i class="fas fa-chart-simple"></i> Resultado do simulado</span>
+                        <h2>${resultTitle}</h2>
+                        <p>${retryMessage}</p>
+                        <div class="simulado-result-actions">
+                            <button onclick="restartCurrentSimulado()" class="action-button">
+                                <i class="fas fa-rotate-right mr-2"></i> Vamos de novo
+                            </button>
+                            <button onclick="goToStudentHome()" class="action-button ghost-action">
+                                <i class="fas fa-house mr-2"></i> Ir para início
+                            </button>
+                        </div>
+                    </div>
+                    <div class="simulado-score-ring" style="--percentage: ${percentage}">
+                        <strong>${note}</strong>
+                        <span>de 10</span>
+                    </div>
+                </section>
+
+                <div class="simulado-result-metrics">
+                    <article><i class="fas fa-check"></i><span>Acertos</span><strong>${correctCount}/${total}</strong></article>
+                    <article><i class="fas fa-xmark"></i><span>Erros</span><strong>${wrongCount}</strong></article>
+                    <article><i class="fas fa-circle-question"></i><span>Sem resposta</span><strong>${unanswered}</strong></article>
+                    <article><i class="fas fa-percent"></i><span>Aproveitamento</span><strong>${percentage.toFixed(0)}%</strong></article>
                 </div>
 
-                <div class="flex justify-center mb-8">
-                    <button onclick="location.reload()" class="action-button">
-                        <i class="fas fa-undo mr-2"></i> Voltar ao Início
-                    </button>
-                </div>
-
-                <div class="text-left">
-                    <h3 class="text-xl font-bold text-blue-500 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2"><i class="fas fa-clipboard-check mr-2"></i> Gabarito Detalhado</h3>
+                <div class="simulado-answer-review">
+                    <h3><i class="fas fa-clipboard-check"></i> Gabarito detalhado</h3>
                     ${feedbackHtml}
                 </div>
             </div>
@@ -2674,6 +3111,7 @@ window.manageUserAccess = async function(uid) {
         document.getElementById('restart-tour-inline')?.addEventListener('click', () => startOnboardingTour(true));
         updateBreadcrumbs();
     }
+    window.goToStudentHome = goToHomePage;
 
     function getWelcomeContent() {
         const stats = getLearningStats();
@@ -2864,6 +3302,43 @@ window.manageUserAccess = async function(uid) {
         const courseLabel = currentUserData?.courseType === 'SP' ? 'Segurança Patrimonial' : 'Bombeiro Civil e Brigadista';
         const favorites = getFavoriteModules().filter(id => moduleContent[id]);
         const savedPhoto = localStorage.getItem('user_profile_pic') || '';
+        const academicSubjects = [
+            { id: 'rh', title: 'Relações Humanas', icon: 'fas fa-users' },
+            { id: 'legislacao', title: 'Legislação', icon: 'fas fa-gavel' },
+            { id: 'salvamento', title: 'Salvamento', icon: 'fas fa-life-ring' },
+            { id: 'pci', title: 'Prevenção e Combate a Incêndio', icon: 'fas fa-fire-extinguisher' },
+            { id: 'aph', title: 'Atendimento Pré Hospitalar', icon: 'fas fa-briefcase-medical' }
+        ];
+        const academicGrades = getStoredJson('pbc_academic_grades_v1', {});
+        const academicRows = academicSubjects.map(subject => {
+            const savedGrade = academicGrades[subject.id] || {};
+            const hasGrade = savedGrade.nota !== undefined && savedGrade.nota !== null && savedGrade.nota !== '';
+            const note = hasGrade ? String(savedGrade.nota) : 'Em breve';
+            const situation = savedGrade.situacao || 'Aguardando lançamento';
+            const observation = savedGrade.observacao || 'Nota será lançada após conferência da planilha oficial.';
+            const status = savedGrade.status || (hasGrade ? 'Lançada' : 'Pendente');
+            const numericGrade = Number(String(savedGrade.nota || '').replace(',', '.'));
+            const tone = hasGrade ? (numericGrade >= 7 ? 'done' : 'progress') : 'pending';
+            return { subject, note, situation, observation, status, tone };
+        });
+        const academicHtml = academicRows.map(row => `
+            <article class="academic-status-row ${row.tone}">
+                <div class="academic-status-icon"><i class="${row.subject.icon}"></i></div>
+                <div class="academic-status-main">
+                    <strong>${escapeHtml(row.subject.title)}</strong>
+                    <span>${escapeHtml(row.observation)}</span>
+                </div>
+                <div class="academic-status-meta">
+                    <span>Nota</span>
+                    <strong>${escapeHtml(row.note)}</strong>
+                </div>
+                <div class="academic-status-meta">
+                    <span>Situação</span>
+                    <strong>${escapeHtml(row.situation)}</strong>
+                </div>
+                <div class="academic-status-pill">${escapeHtml(row.status)}</div>
+            </article>
+        `).join('');
         const formatCpf = (value) => {
             const digits = onlyDigits(value);
             return digits.length === 11 ? digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : (value || 'Não informado');
@@ -2908,6 +3383,19 @@ window.manageUserAccess = async function(uid) {
                     <article><span>Progresso</span><strong>${stats.percent}%</strong><small>${stats.doneCount}/${stats.total} módulos</small></article>
                     <article><span>Conquistas</span><strong>${stats.achievementCount}</strong><small>áreas desbloqueadas</small></article>
                     <article><span>Favoritos</span><strong>${favorites.length}</strong><small>itens salvos</small></article>
+                </div>
+                <div class="academic-status-panel">
+                    <div class="academic-status-head">
+                        <div>
+                            <span><i class="fas fa-graduation-cap"></i> Situação acadêmica</span>
+                            <h3>Notas de prova por matéria</h3>
+                            <p>Área preparada para exibir nota, situação e observação usando CPF e nome completo como conferência.</p>
+                        </div>
+                        <strong><i class="fas fa-clock"></i> Em breve</strong>
+                    </div>
+                    <div class="academic-status-list">
+                        ${academicHtml || '<p class="academic-status-empty">Nenhuma matéria disponível para este perfil.</p>'}
+                    </div>
                 </div>
                 <div class="student-certificate-panel">
                     <div>
@@ -3579,14 +4067,21 @@ document.getElementById('manual-sync-btn')?.addEventListener('click', async () =
         // 3. Admin Panel (Correção Mobile)
         adminBtn?.addEventListener('click', window.openAdminPanel);
         mobileAdminBtn?.addEventListener('click', window.openAdminPanel);
+        document.getElementById('instructor-panel-btn')?.addEventListener('click', window.openInstructorPanel);
+        document.getElementById('mobile-instructor-btn')?.addEventListener('click', window.openInstructorPanel);
+        document.getElementById('close-instructor-modal')?.addEventListener('click', window.closeInstructorPanel);
 
         closeAdminBtn?.addEventListener('click', () => {
-            adminModal.classList.remove('show');
-            adminOverlay.classList.remove('show');
+            closeCommandPanel(adminModal, adminOverlay);
         });
         adminOverlay?.addEventListener('click', () => {
-            adminModal.classList.remove('show');
-            adminOverlay.classList.remove('show');
+            if (document.getElementById('manager-modal')?.classList.contains('show') && typeof managerUnsubscribe === 'function') {
+                managerUnsubscribe();
+                managerUnsubscribe = null;
+            }
+            closeCommandPanel(adminModal, adminOverlay);
+            closeCommandPanel(document.getElementById('instructor-modal'), adminOverlay);
+            closeCommandPanel(document.getElementById('manager-modal'), adminOverlay);
         });
 
         // 4. Reset com Limpeza de Nuvem
@@ -3707,12 +4202,17 @@ document.getElementById('manual-sync-btn')?.addEventListener('click', async () =
         };
 
         const openIam = () => {
+            if (!hasIamPremiumAccess()) {
+                closeIam();
+                window.openIamPremiumGate();
+                return;
+            }
+
             const today = new Date().toLocaleDateString();
             const key = `ai_usage_${today}`;
             let count = parseInt(window.localStorage?.getItem(key) || '0') + 1;
 
-            const isPremium = currentUserData && currentUserData.status === 'premium';
-            const limit = isPremium ? 50 : 5; 
+            const limit = 50; 
 
             if (count > limit) {
                 showAppToast('Limite diário da IAM atingido', `Seu plano permite ${limit} aberturas por dia.`, 'warning');
@@ -3725,7 +4225,7 @@ document.getElementById('manual-sync-btn')?.addEventListener('click', async () =
             widget.classList.add('open');
             document.body.classList.add('iam-open');
             launcher.setAttribute('aria-expanded', 'true');
-            if (frame && !frame.src) frame.src = 'https://iam-intelig-ncia-artificial-medeiros-801400632400.us-west2.run.app/';
+            if (frame && !frame.src) frame.src = frame.dataset.src || 'https://iam-intelig-ncia-artificial-medeiros-801400632400.us-west2.run.app/';
         };
 
         launcher.addEventListener('click', () => {
@@ -4013,9 +4513,8 @@ window.openManagerPanel = function() {
 
     if (!modal || !overlay) return;
 
-    // Abre o modal
-    modal.classList.add("show");
-    overlay.classList.add("show");
+    // Abre o modal sem deslocar a página de fundo
+    openCommandPanel(modal, overlay);
     currentManagerQuickFilter = 'all';
     document.querySelectorAll('[data-manager-filter-btn]').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.managerFilterBtn === 'all');
@@ -4039,9 +4538,7 @@ window.openManagerPanel = function() {
             }
             
             // Só fecha o overlay se o painel de admin geral não estiver aberto por baixo
-            if (!document.getElementById("admin-modal")?.classList.contains("show")) {
-                overlay.classList.remove("show");
-            }
+            closeCommandPanel(modal, overlay);
         };
     }
 

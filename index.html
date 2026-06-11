@@ -29,7 +29,7 @@
       }
     </script>
 
-    <link rel="stylesheet" href="style.css?v=94">
+    <link rel="stylesheet" href="style.css?v=105">
     
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -948,14 +948,17 @@
     </div>
 
     <div id="trial-floating-notify" class="hidden fixed right-4 bg-white dark:bg-gray-800 border-l-4 border-yellow-500 text-gray-800 dark:text-white p-4 rounded-r shadow-2xl z-50 flex items-center gap-4 animate-slide-in max-w-sm" style="bottom: 160px;">
-        <div>
-            <p class="font-bold text-sm" id="trial-title-text">Período de Experiência</p>
-            <p class="text-xs text-gray-600 dark:text-gray-400"><span id="trial-days-left">...</span> dias restantes.</p>
+        <div class="trial-notify-icon" aria-hidden="true">
+            <i class="fas fa-crown"></i>
         </div>
-        <button id="trial-subscribe-btn" class="bg-green-600 hover:bg-green-500 text-white text-xs font-bold py-2 px-3 rounded transition-colors">
+        <div class="trial-notify-copy">
+            <p class="font-bold text-sm" id="trial-title-text">Seu acesso termina em breve</p>
+            <p class="text-xs text-gray-600 dark:text-gray-400"><span id="trial-days-left"></span> restantes.</p>
+        </div>
+        <button id="trial-subscribe-btn" type="button" onclick="document.getElementById('expired-modal').classList.add('show'); document.getElementById('name-modal-overlay').classList.add('show');" class="bg-green-600 hover:bg-green-500 text-white text-xs font-bold py-2 px-3 rounded transition-colors">
             ASSINAR
         </button>
-        <button id="close-trial-notify" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+        <button id="close-trial-notify" type="button" onclick="sessionStorage.setItem('trial_notice_dismissed', 'true'); document.getElementById('trial-floating-notify')?.classList.add('hidden'); document.getElementById('trial-days-left').textContent = '';" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
             <i class="fas fa-times"></i>
         </button>
     </div>
@@ -996,6 +999,9 @@
                         <button id="admin-panel-btn" class="hidden elite-icon-btn admin-elite-btn" title="Painel Administrativo">
                             <i class="fas fa-user-shield"></i>
                         </button>
+                        <button id="instructor-panel-btn" class="hidden elite-icon-btn instructor-elite-btn" title="Painel do Instrutor">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                        </button>
                         <button id="install-app-btn" class="hidden bg-blue-600 hover:bg-blue-500 text-white py-2 px-4 rounded-full text-sm font-bold shadow-md transition-all flex items-center">
                             <i class="fas fa-download mr-2"></i> Instalar App
                         </button>
@@ -1025,6 +1031,9 @@
                     <div class="lg:hidden flex items-center gap-3">
                         <button id="mobile-admin-btn" class="hidden elite-icon-btn admin-elite-btn mobile-elite-btn">
                             <i class="fas fa-user-shield"></i>
+                        </button>
+                        <button id="mobile-instructor-btn" class="hidden elite-icon-btn instructor-elite-btn mobile-elite-btn" title="Painel do Instrutor">
+                            <i class="fas fa-chalkboard-teacher"></i>
                         </button>
 
                         <button id="mobile-subscribe-btn" class="mobile-subscribe-elite-btn">
@@ -1254,10 +1263,9 @@
         </div>
         <div class="p-4 md:p-8 bg-gray-900 overflow-y-auto custom-scrollbar">
             <div class="payment-trust-strip">
-                <div><i class="fas fa-lock"></i><span>Pagamento seguro</span></div>
-                <div><i class="fas fa-bolt"></i><span>Liberação rápida</span></div>
-                <div><i class="fas fa-receipt"></i><span>Investimento único</span></div>
-                <div><i class="fab fa-pix"></i><span>PIX ou link</span></div>
+                <div><i class="fas fa-chart-line"></i><span>+80% mais aprovação</span></div>
+                <div><i class="fas fa-award"></i><span>+60% mais notas máximas</span></div>
+                <div><i class="fas fa-user-tie"></i><span>+35% mais chances em entrevistas</span></div>
             </div>
             <div class="payment-proof-alert">
                 <i class="fab fa-pix"></i>
@@ -1421,6 +1429,87 @@
             </div>
         </div>
     </div>
+
+    <div id="instructor-modal" class="modal instructor-modal w-[95%] max-w-6xl mx-auto overflow-hidden flex flex-col max-h-[90vh]" style="z-index: 20002 !important;">
+        <div class="instructor-modal-head">
+            <div>
+                <span><i class="fas fa-chalkboard-teacher"></i> Modo aula</span>
+                <h2>Painel do Instrutor</h2>
+                <p>Ferramentas rápidas para conduzir aula, acompanhar presença e publicar avisos.</p>
+            </div>
+            <button id="close-instructor-modal" class="instructor-close-btn" title="Fechar painel"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="instructor-modal-body custom-scrollbar">
+            <section class="instructor-hero">
+                <div>
+                    <span>Central do Medeiros</span>
+                    <h3>Comande a aula sem sair da plataforma</h3>
+                    <p>Use cronômetro, sorteio, chamada, roteiro e comunicado rápido em uma única tela.</p>
+                </div>
+                <div class="instructor-clock">
+                    <strong id="instructor-clock-time">--:--</strong>
+                    <span>horário atual</span>
+                </div>
+            </section>
+
+            <div class="instructor-tools-grid">
+                <article class="instructor-tool-card">
+                    <div class="instructor-card-title"><i class="fas fa-stopwatch"></i><div><strong>Timer de aula</strong><span>Controle intervalos, práticas e simulados.</span></div></div>
+                    <div class="instructor-timer-display" id="instructor-timer-display">10:00</div>
+                    <div class="instructor-progress"><span id="instructor-timer-bar"></span></div>
+                    <div class="instructor-inline">
+                        <label class="instructor-field compact"><span>Minutos</span><input id="instructor-timer-min" type="number" min="1" max="180" value="10"></label>
+                        <button class="instructor-primary" onclick="startInstructorTimer()"><i class="fas fa-play"></i> Iniciar</button>
+                        <button class="instructor-ghost" onclick="pauseInstructorTimer()"><i class="fas fa-pause"></i></button>
+                        <button class="instructor-ghost" onclick="resetInstructorTimer()"><i class="fas fa-rotate-left"></i></button>
+                    </div>
+                </article>
+
+                <article class="instructor-tool-card">
+                    <div class="instructor-card-title"><i class="fas fa-user-check"></i><div><strong>Sorteador de aluno</strong><span>Cole nomes e sorteie participação.</span></div></div>
+                    <label class="instructor-field"><span>Lista de alunos</span><textarea id="instructor-student-list" rows="5" placeholder="Um nome por linha"></textarea></label>
+                    <button class="instructor-primary full" onclick="sortInstructorStudent()"><i class="fas fa-shuffle"></i> Sortear aluno</button>
+                    <div id="instructor-student-result" class="instructor-result">Aguardando sorteio.</div>
+                </article>
+
+                <article class="instructor-tool-card">
+                    <div class="instructor-card-title"><i class="fas fa-clipboard-list"></i><div><strong>Chamada rápida</strong><span>Monte uma lista simples durante a aula.</span></div></div>
+                    <div class="instructor-inline">
+                        <label class="instructor-field grow"><span>Aluno presente</span><input id="instructor-attendance-name" placeholder="Nome do aluno"></label>
+                        <button class="instructor-primary" onclick="addInstructorAttendance()"><i class="fas fa-plus"></i> Adicionar</button>
+                    </div>
+                    <div id="instructor-attendance-list" class="instructor-list"></div>
+                    <button class="instructor-ghost full" onclick="copyInstructorAttendance()"><i class="fas fa-copy"></i> Copiar chamada</button>
+                </article>
+
+                <article class="instructor-tool-card">
+                    <div class="instructor-card-title"><i class="fas fa-bolt"></i><div><strong>Pergunta relâmpago</strong><span>Use para recuperar atenção da turma.</span></div></div>
+                    <button class="instructor-primary full" onclick="generateInstructorQuestion()"><i class="fas fa-wand-magic-sparkles"></i> Gerar pergunta</button>
+                    <div id="instructor-question-result" class="instructor-result">Clique para gerar uma pergunta rápida.</div>
+                </article>
+
+                <article class="instructor-tool-card">
+                    <div class="instructor-card-title"><i class="fas fa-route"></i><div><strong>Roteiro da aula</strong><span>Salvo apenas neste dispositivo.</span></div></div>
+                    <label class="instructor-field"><span>Plano rápido</span><textarea id="instructor-class-plan" rows="7" placeholder="Abertura, conteúdo, prática, simulado, recado final..."></textarea></label>
+                    <div class="instructor-inline">
+                        <button class="instructor-primary" onclick="saveInstructorPlan()"><i class="fas fa-save"></i> Salvar roteiro</button>
+                        <button class="instructor-ghost" onclick="copyInstructorPlan()"><i class="fas fa-copy"></i> Copiar</button>
+                    </div>
+                </article>
+
+                <article class="instructor-tool-card instructor-announcement-card">
+                    <div class="instructor-card-title"><i class="fas fa-bullhorn"></i><div><strong>Comunicado rápido</strong><span>Campo direto para você publicar vagas, oportunidades e recados.</span></div></div>
+                    <label class="instructor-field"><span>Título</span><input id="instructor-ann-title" placeholder="Ex: Vaga disponível hoje"></label>
+                    <label class="instructor-field"><span>Mensagem</span><textarea id="instructor-ann-message" rows="4" placeholder="Escreva o aviso para os alunos..."></textarea></label>
+                    <div class="instructor-inline">
+                        <label class="instructor-field grow"><span>Enviar para</span><select id="instructor-ann-target"><option value="all">Todos</option><option value="company">Turma</option><option value="status">Status</option><option value="course">Curso</option><option value="email">Aluno por e-mail</option></select></label>
+                        <label class="instructor-field grow"><span>Filtro</span><input id="instructor-ann-target-value" placeholder="Turma, status, curso ou e-mail"></label>
+                    </div>
+                    <button class="instructor-primary full" onclick="publishInstructorAnnouncement()"><i class="fas fa-paper-plane"></i> Publicar aviso</button>
+                </article>
+            </div>
+        </div>
+    </div>
     
     <div id="admin-modal" class="modal w-[95%] max-w-6xl mx-auto overflow-hidden flex flex-col max-h-[90vh]" style="background: #f8f9fa; border: 1px solid #e2e8f0; color: #1a202c; z-index: 20002 !important;">
         <div class="bg-gray-800 p-4 border-b border-gray-700 flex justify-between items-center flex-shrink-0">
@@ -1517,8 +1606,8 @@
     <script src="quizzes.js" defer></script>
     <script src="data.js" defer></script>
     <script src="course.js" defer></script>
-    <script src="tools_logic.js?v=94" defer></script> <script src="firebase-init.js?v=94" defer></script>
-    <script src="app_final.js?v=94" defer></script>
+<script src="tools_logic.js?v=105" defer></script> <script src="firebase-init.js?v=105" defer></script>
+    <script src="app_final.js?v=105" defer></script>
     <div id="iam-ai-widget" class="iam-ai-widget hidden" aria-live="polite">
         <section id="iam-ai-panel" class="iam-ai-panel" aria-label="IAM - Inteligência Artificial Medeiros">
             <header class="iam-ai-header">
@@ -1531,7 +1620,7 @@
             <iframe
                 id="iam-ai-frame"
                 title="IAM - Inteligência Artificial Medeiros"
-                src="https://iam-intelig-ncia-artificial-medeiros-801400632400.us-west2.run.app/"
+                data-src="https://iam-intelig-ncia-artificial-medeiros-801400632400.us-west2.run.app/"
                 loading="lazy"
                 referrerpolicy="strict-origin-when-cross-origin"
                 allow="clipboard-read; clipboard-write">

@@ -13,6 +13,12 @@
         setTimeout(() => toast.remove(), 4200);
     };
 
+    function isInstructorAdminUser(u = getUser()) {
+        const email = (u.email || '').toLowerCase();
+        const adminButtonVisible = !!document.querySelector('#admin-panel-btn:not(.hidden), #mobile-admin-btn:not(.hidden), #instructor-panel-btn:not(.hidden), #mobile-instructor-btn:not(.hidden)');
+        return u.isAdmin === true || u.role === 'admin' || u.isManager === true || adminButtonVisible || email === 'coordenadormedeiros@gmail.com';
+    }
+
     // =================================================================
     // 0. CHECKLIST DE PLANTÃO
     // =================================================================
@@ -1039,22 +1045,36 @@
 
     window.ToolsApp.renderAdminAnnouncements = function(c) {
         const u = getUser();
-        const isAdmin = u.isAdmin === true;
+        const isAdmin = isInstructorAdminUser(u);
         c.innerHTML += toolShell('tool-announcements', 'fas fa-bullhorn', 'Canal de Avisos Importantes', 'Vagas, oportunidades e recados enviados pelo administrador.', `
             ${isAdmin ? `
                 <div class="admin-tool-panel">
+                    <div class="announcement-composer-head">
+                        <i class="fas fa-paper-plane"></i>
+                        <div>
+                            <strong>Publicar comunicado para alunos</strong>
+                            <span>Envie para todos, uma turma, um status, curso ou um aluno específico por e-mail.</span>
+                        </div>
+                    </div>
                     <div class="pro-grid">
                         ${input('ann-title', 'Título', 'Vaga, oportunidade ou recado')}
-                        <label class="pro-field"><span>Enviar para</span><select id="ann-target"><option value="all">Todos</option><option value="company">Turma</option><option value="status">Status</option><option value="course">Curso</option><option value="email">Aluno por e-mail</option></select></label>
-                        ${input('ann-target-value', 'Valor do público', 'Ex: Turma A, premium, BC, email')}
+                        <label class="pro-field"><span>Enviar para</span><select id="ann-target"><option value="all">Todos os alunos</option><option value="company">Turma específica</option><option value="status">Status do aluno</option><option value="course">Curso</option><option value="email">Aluno individual por e-mail</option></select></label>
+                        ${input('ann-target-value', 'Filtro do público', 'Ex: Turma A, premium, BC, aluno@email.com')}
                         ${input('ann-expire', 'Expira em', '', 'date')}
                         ${textarea('ann-message', 'Mensagem', 'Escreva o comunicado...', 4)}
                     </div>
-                    ${actions(`<button class="tool-mini-btn" onclick="ToolsApp.publishAnnouncement()"><i class="fas fa-paper-plane"></i> Publicar aviso</button>`)}
+                    ${actions(`<button class="tool-mini-btn" onclick="ToolsApp.publishAnnouncement()"><i class="fas fa-paper-plane"></i> Publicar aviso</button><button class="tool-mini-btn ghost" onclick="ToolsApp.previewAnnouncementAudience()"><i class="fas fa-eye"></i> Ver regra de envio</button>`)}
+                    <div id="ann-audience-preview" class="premium-result-card">Regra atual: todos os alunos verão este aviso.</div>
                 </div>
-            ` : ''}
+            ` : `
+                <div class="announcement-student-note">
+                    <i class="fas fa-bell"></i>
+                    <span>Aqui aparecem comunicados, vagas e oportunidades enviados pelo administrador.</span>
+                </div>
+            `}
             <div id="ann-list" class="pro-list"></div>
         `, 'tool-card-featured');
+        ToolsApp.refreshAnnouncements();
     };
     function announcementMatches(a, u) {
         if (a.expire && new Date(a.expire + 'T23:59:59') < new Date()) return false;
@@ -1078,12 +1098,15 @@
         return toolStore.get('tool_announcements_v1', []);
     }
     window.ToolsApp.publishAnnouncement = async function() {
+        const target = toolValue('ann-target') || 'all';
+        const targetValue = toolValue('ann-target-value');
+        if (target !== 'all' && !targetValue) return ToolsApp.toast('Informe o filtro do público', 'info');
         const item = {
             id: String(Date.now()),
             title: toolValue('ann-title'),
             message: toolValue('ann-message'),
-            target: toolValue('ann-target') || 'all',
-            targetValue: toolValue('ann-target-value'),
+            target,
+            targetValue,
             expire: toolValue('ann-expire'),
             readBy: {},
             createdAtLocal: new Date().toISOString()
@@ -1108,17 +1131,31 @@
         ToolsApp.toast('Aviso publicado');
         ToolsApp.refreshAnnouncements();
     };
+    window.ToolsApp.previewAnnouncementAudience = function() {
+        const target = toolValue('ann-target') || 'all';
+        const value = toolValue('ann-target-value');
+        const map = {
+            all: 'Todos os alunos verão este aviso.',
+            company: `Somente alunos da turma "${value || 'informe a turma'}".`,
+            status: `Somente alunos com status "${value || 'trial/premium/expirado'}".`,
+            course: `Somente alunos do curso "${value || 'BC ou SP'}".`,
+            email: `Somente o aluno com e-mail "${value || 'aluno@email.com'}".`
+        };
+        const box = document.getElementById('ann-audience-preview');
+        if (box) box.innerHTML = `<strong>Regra de envio:</strong> ${map[target] || map.all}`;
+    };
     window.ToolsApp.refreshAnnouncements = async function() {
         const list = document.getElementById('ann-list');
         if (!list) return;
         const u = getUser();
+        const isAdmin = isInstructorAdminUser(u);
         const read = toolStore.get('tool_announcement_reads_v1', {});
         const all = await getAnnouncements();
-        const visible = all.filter(a => u.isAdmin || announcementMatches(a, u));
+        const visible = all.filter(a => isAdmin || announcementMatches(a, u));
         list.innerHTML = visible.length ? visible.map(a => {
             const count = a.readBy ? Object.keys(a.readBy).length : 0;
             const wasRead = read[a.id] || (u.uid && a.readBy && a.readBy[u.uid]);
-            return `<div class="announcement-item ${wasRead ? 'read' : ''}"><strong>${a.title}</strong><p>${a.message}</p><small>${a.target === 'all' ? 'Todos' : `${a.target}: ${a.targetValue || '-'}`} ${u.isAdmin ? `| ${count} leitura(s)` : ''}</small>${!u.isAdmin ? `<button onclick="ToolsApp.confirmAnnouncementRead('${a.id}')"><i class="fas fa-check"></i> Confirmar leitura</button>` : ''}</div>`;
+            return `<div class="announcement-item ${wasRead ? 'read' : ''}"><strong>${a.title}</strong><p>${a.message}</p><small>${a.target === 'all' ? 'Todos' : `${a.target}: ${a.targetValue || '-'}`} ${isAdmin ? `| ${count} leitura(s)` : ''}</small>${!isAdmin ? `<button onclick="ToolsApp.confirmAnnouncementRead('${a.id}')"><i class="fas fa-check"></i> Confirmar leitura</button>` : ''}</div>`;
         }).join('') : '<div class="pro-empty">Nenhum aviso disponível.</div>';
     };
     window.ToolsApp.confirmAnnouncementRead = async function(id) {
